@@ -32,7 +32,7 @@ interface WorkDao {
     fun getRecentPlannedWorks(): Flow<List<WorkEntity>>
 
     @Query("UPDATE works SET status = 'COMPLETED' WHERE id = :workId")
-    suspend fun markAsCompleted(workId: WorkEntity)
+    suspend fun markAsCompleted(workId: Long)
 
     @Query(
         """

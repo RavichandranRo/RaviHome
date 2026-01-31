@@ -2,8 +2,10 @@ package com.example.ravihome
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -14,20 +16,48 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // 🔑 REQUIRED — attach window
         setContentView(R.layout.activity_main)
+
         val executor = ContextCompat.getMainExecutor(this)
+        val biometricManager = BiometricManager.from(this)
+
+        when (biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
+                    or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        )) {
+            BiometricManager.BIOMETRIC_SUCCESS -> {
+                // OK, continue
+            }
+            else -> {
+                // No biometric → open app normally
+                setContentView(R.layout.activity_main)
+                setupNavigation()
+                return
+            }
+        }
+
         val biometricPrompt = BiometricPrompt(
             this,
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
+
                 override fun onAuthenticationSucceeded(
                     result: BiometricPrompt.AuthenticationResult
                 ) {
-                    setContentView(R.layout.activity_main)
                     setupNavigation()
                 }
 
                 override fun onAuthenticationFailed() {
+                    finish()
+                }
+
+                override fun onAuthenticationError(
+                    errorCode: Int,
+                    errString: CharSequence
+                ) {
                     finish()
                 }
             }
@@ -36,7 +66,10 @@ class MainActivity : AppCompatActivity() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("App Locked")
             .setSubtitle("Authenticate to continue")
-            .setNegativeButtonText("Exit")
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                        or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
             .build()
 
         biometricPrompt.authenticate(promptInfo)
@@ -45,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupNavigation() {
         val navHost = supportFragmentManager
             .findFragmentById(R.id.nav_host) as NavHostFragment
+
         val navController = navHost.navController
 
         findViewById<BottomNavigationView>(R.id.bottom_nav)

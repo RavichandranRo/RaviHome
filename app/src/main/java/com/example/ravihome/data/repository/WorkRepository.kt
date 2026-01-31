@@ -20,7 +20,7 @@ class WorkRepository @Inject constructor(
 
     suspend fun update(work: WorkEntity) = dao.updateWork(work)
 
-    suspend fun markComplete(work: WorkEntity) = dao.markAsCompleted(work)
+    suspend fun markComplete(work: WorkEntity) = dao.markAsCompleted(work.id)
 
     fun recentPlanned(): Flow<List<WorkEntity>> = dao.getRecentPlannedWorks()
 

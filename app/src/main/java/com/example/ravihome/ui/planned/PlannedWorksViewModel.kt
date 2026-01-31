@@ -3,8 +3,8 @@ package com.example.ravihome.ui.planned
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ravihome.data.entity.WorkEntity
-import com.example.ravihome.data.status.WorkStatus
 import com.example.ravihome.data.repository.WorkRepository
+import com.example.ravihome.data.status.WorkStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,21 +34,19 @@ class PlannedWorksViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun setKeyword(keyword: String?) {
-        if (keyword != null) {
-            searchKeyword.value = keyword
-        }
+        searchKeyword.value = keyword ?: ""
     }
 
     fun setDate(date: String?) {
         searchDate.value = date
     }
 
-    fun addPlannedWork(title: String, date: String) {
+    fun addPlannedWork(title: String, date: String, desc: String) {
         viewModelScope.launch {
             repository.insert(
                 WorkEntity(
                     title = title,
-                    description = "",
+                    description = desc,
                     date = date,
                     status = WorkStatus.PLANNED,
                     createdAt = System.currentTimeMillis()
@@ -57,13 +55,20 @@ class PlannedWorksViewModel @Inject constructor(
         }
     }
 
-    fun markCompleted(id: WorkEntity) {
+    fun markCompleted(work: WorkEntity) {
         viewModelScope.launch {
-            repository.markComplete(id)
+            repository.markComplete(work)
         }
     }
 
     fun deleteWork(id: Long) {
         viewModelScope.launch { repository.delete(id) }
     }
+
+    fun restoreWork(work: WorkEntity) {
+        viewModelScope.launch {
+            repository.insert(work.copy(id = 0))
+        }
+    }
+
 }

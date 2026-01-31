@@ -32,7 +32,7 @@ class PlannedWorksAdapter(
             b.cbComplete.setOnCheckedChangeListener(null)
             b.cbComplete.isChecked = false
             b.cbComplete.setOnCheckedChangeListener { _, checked ->
-                if (checked) onComplete(item)
+                if (checked) {onComplete(item)}
             }
             b.root.setOnLongClickListener {
                 onDelete(item)
