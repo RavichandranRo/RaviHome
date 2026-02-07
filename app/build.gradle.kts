@@ -19,6 +19,22 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "PNR_API_BASE_URL",
+            "\"${project.findProperty("PNR_API_BASE_URL") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "PNR_API_KEY",
+            "\"${project.findProperty("PNR_API_KEY") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "PNR_API_HOST",
+            "\"${project.findProperty("PNR_API_HOST") ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -42,6 +58,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
     lint {
         abortOnError = false
@@ -81,6 +98,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.mpandroidchart)
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
     // Apache POI for Excel export
     implementation("org.apache.poi:poi-ooxml:5.2.5") {
         exclude(group = "org.apache.xmlgraphics", module = "batik-anim")

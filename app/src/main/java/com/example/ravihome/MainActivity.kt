@@ -9,6 +9,7 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
                     result: BiometricPrompt.AuthenticationResult
                 ) {
                     setupNavigation()
+                    Snackbar.make(findViewById(R.id.root_container), "Welcome back!", Snackbar.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {

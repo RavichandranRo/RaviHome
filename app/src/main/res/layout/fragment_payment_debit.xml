@@ -6,16 +6,9 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <com.google.android.material.textview.MaterialTextView
-        style="@style/TextAppearance.Material3.TitleLarge"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="EB Calculator" />
-
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="2dp">
 
@@ -25,69 +18,44 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilPrevious"
+            <com.google.android.material.textview.MaterialTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Previous reading">
+                android:text="Debit payment"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Amount">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etPrevious"
+                    android:id="@+id/etAmount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilCurrent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Current reading">
+                android:hint="Description">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etCurrent"
+                    android:id="@+id/etNote"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
+                    android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRecordPayment"
+                android:id="@+id/btnPay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:enabled="false"
-                android:text="Record EB payment" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="1dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/tvUnits"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Units: --"
-                android:textStyle="bold" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/tvAmount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Amount: --" />
+                android:text="Confirm debit" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

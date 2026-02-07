@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/plannedWorksFragment" android:title="Planned" android:icon="@android:drawable/ic_menu_agenda" />
-    <item android:id="@+id/completedWorksFragment" android:title="Completed" android:icon="@android:drawable/ic_menu_today" />
+    <item
+        android:id="@+id/dashboardFragment"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="Home" />
+    <item
+        android:id="@+id/plannedWorksFragment"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Planned" />
+    <item
+        android:id="@+id/completedWorksFragment"
+        android:icon="@android:drawable/ic_menu_today"
+        android:title="Completed" />
+    <item
+        android:id="@+id/ebFragment"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="EB" />
+    <item
+        android:id="@+id/paymentFragment"
+        android:icon="@android:drawable/ic_menu_send"
+        android:title="Payments" />
 </menu>

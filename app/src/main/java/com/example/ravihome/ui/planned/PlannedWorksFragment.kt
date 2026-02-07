@@ -22,6 +22,7 @@ import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.DateFormatUtils
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -34,6 +35,12 @@ class PlannedWorksFragment : Fragment() {
     private val viewModel: PlannedWorksViewModel by viewModels()
 
     private lateinit var adapter: PlannedWorksAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialFadeThrough()
+        exitTransition = MaterialFadeThrough()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
