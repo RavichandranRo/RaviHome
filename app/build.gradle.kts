@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.recyclerview)
     ksp(libs.androidx.room.compiler)
     implementation(libs.material)
     implementation(libs.androidx.navigation.fragment.ktx)

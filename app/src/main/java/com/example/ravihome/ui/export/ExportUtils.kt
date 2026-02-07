@@ -11,7 +11,9 @@ object ExportUtils {
     fun exportCsv(context: Context, fileName: String, rows: List<List<String>>) {
         val file = File(context.getExternalFilesDir(null), "$fileName.csv")
         file.printWriter().use { out ->
-            rows.forEach { out.println(it.joinToString(",")) }
+            rows.forEach { row ->
+                out.println(row.joinToString(",") { escapeCsv(it) })
+            }
         }
     }
 
@@ -20,7 +22,7 @@ object ExportUtils {
         file.writeText(
             "<html><body><table border='1'>" +
                     rows.joinToString("") { r ->
-                        "<tr>${r.joinToString("") { "<td>$it</td>" }}</tr>"
+                        "<tr>${r.joinToString("") { "<td>${escapeHtml(it)}</td>" }}</tr>"
                     } +
                     "</table></body></html>"
         )
@@ -29,13 +31,27 @@ object ExportUtils {
     fun exportPdf(context: Context, fileName: String, rows: List<List<String>>) {
         val file = File(context.getExternalFilesDir(null), "$fileName.pdf")
         val doc = PdfDocument()
-        val page = doc.startPage(PdfDocument.PageInfo.Builder(300, 600, 1).create())
-        val canvas = page.canvas
-        var y = 20f
+        val pageWidth = 595
+        val pageHeight = 842
+        val lineHeight = 18f
+        val marginTop = 32f
+        val marginBottom = 32f
+        val paint = Paint()
+        var pageNumber = 1
+        var y = marginTop
+        var page = doc.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
+        var canvas = page.canvas
 
         rows.forEach { row ->
-            canvas.drawText(row.joinToString(" | "), 10f, y, Paint())
-            y += 20
+            if (y + lineHeight > pageHeight - marginBottom) {
+                doc.finishPage(page)
+                pageNumber += 1
+                page = doc.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
+                canvas = page.canvas
+                y = marginTop
+            }
+            canvas.drawText(row.joinToString(" | "), 16f, y, paint)
+            y += lineHeight
         }
 
         doc.finishPage(page)
@@ -57,5 +73,19 @@ object ExportUtils {
         val file = File(context.getExternalFilesDir(null), "$fileName.xlsx")
         file.outputStream().use { workbook.write(it) }
         workbook.close()
+    }
+    private fun escapeCsv(value: String): String {
+        val needsEscaping = value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')
+        if (!needsEscaping) return value
+        return "\"${value.replace("\"", "\"\"")}\""
+    }
+
+    private fun escapeHtml(value: String): String {
+        return value
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
     }
 }

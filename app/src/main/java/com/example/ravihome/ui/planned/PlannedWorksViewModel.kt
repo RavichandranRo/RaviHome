@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,7 +26,7 @@ class PlannedWorksViewModel @Inject constructor(
     val recentPlannedWorks = repository.getRecentPlannedWorks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private val searchKeyword = MutableStateFlow("")
-    private val searchDate = MutableStateFlow<String?>(null)
+    private val searchDate = MutableStateFlow<LocalDate?>(null)
 
     val filteredWorks = combine(searchKeyword, searchDate) { k, d ->
         k to d
@@ -34,14 +35,14 @@ class PlannedWorksViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun setKeyword(keyword: String?) {
-        searchKeyword.value = keyword ?: ""
+        searchKeyword.value = keyword ?.trim().orEmpty()
     }
 
-    fun setDate(date: String?) {
+    fun setDate(date: LocalDate?) {
         searchDate.value = date
     }
 
-    fun addPlannedWork(title: String, date: String, desc: String) {
+    fun addPlannedWork(title: String, date: LocalDate, desc: String) {
         viewModelScope.launch {
             repository.insert(
                 WorkEntity(

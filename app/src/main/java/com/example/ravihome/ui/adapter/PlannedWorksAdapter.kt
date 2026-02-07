@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ravihome.data.entity.WorkEntity
 import com.example.ravihome.databinding.RowPlannedWorkBinding
+import com.example.ravihome.ui.util.DateFormatUtils
 
 class PlannedWorksAdapter(
     private val onComplete: (WorkEntity) -> Unit,
@@ -27,8 +28,14 @@ class PlannedWorksAdapter(
     inner class VH(private val b: RowPlannedWorkBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(item: WorkEntity) {
             b.tvTitle.text = item.title
-            b.tvDate.text = item.date
+            b.tvDate.text = DateFormatUtils.formatDisplay(item.date)
             b.tvDesc.text = item.description
+            if (item.amount != null) {
+                b.tvAmount.text = "₹%.2f".format(item.amount)
+                b.tvAmount.visibility = android.view.View.VISIBLE
+            } else {
+                b.tvAmount.visibility = android.view.View.GONE
+            }
             b.cbComplete.setOnCheckedChangeListener(null)
             b.cbComplete.isChecked = false
             b.cbComplete.setOnCheckedChangeListener { _, checked ->

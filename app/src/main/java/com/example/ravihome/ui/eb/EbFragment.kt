@@ -8,6 +8,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.ravihome.databinding.FragmentEbBinding
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,12 +23,42 @@ class EbFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding.etCurrent.addTextChangedListener {
-            val prev = binding.etPrevious.text.toString().toFloatOrNull() ?: return@addTextChangedListener
-            val curr = it.toString().toFloatOrNull() ?: return@addTextChangedListener
+        var latestAmount: Float? = null
+
+        val recalc: () -> Unit = {
+            val prev = binding.etPrevious.text.toString().toFloatOrNull()
+            val curr = binding.etCurrent.text.toString().toFloatOrNull()
+            binding.tilCurrent.error = null
+            latestAmount = null
+            binding.btnRecordPayment.isEnabled = false
+
+            if (prev == null || curr == null) {
+                binding.tvUnits.text = "Units: --"
+                binding.tvAmount.text = "Amount: --"
+                return@recalc
+            }
             val units = curr - prev
-            binding.tvUnits.text = "Units: $units"
-            binding.tvAmount.text = "Amount: ₹${viewModel.calculate(units)}"
+            if (units < 0) {
+                binding.tilCurrent.error = "Current reading must be greater than previous"
+                binding.tvUnits.text = "Units: --"
+                binding.tvAmount.text = "Amount: --"
+                return@recalc
+            }
+
+            val amount = viewModel.calculate(units)
+            latestAmount = amount
+            binding.btnRecordPayment.isEnabled = amount > 0f
+            binding.tvUnits.text = "Units: %.1f".format(units)
+            binding.tvAmount.text = "Amount: ₹%.2f".format(amount)
+        }
+
+        binding.etPrevious.addTextChangedListener { recalc() }
+        binding.etCurrent.addTextChangedListener { recalc() }
+
+        binding.btnRecordPayment.setOnClickListener {
+            val amount = latestAmount ?: return@setOnClickListener
+            viewModel.recordPayment(amount)
+            Snackbar.make(binding.root, "EB payment saved", Snackbar.LENGTH_SHORT).show()
         }
     }
 }

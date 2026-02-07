@@ -1,14 +1,13 @@
 package com.example.ravihome.data.dao
 
-import com.example.ravihome.data.entity.WorkEntity
-
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import com.example.ravihome.data.entity.WorkEntity
 import com.example.ravihome.data.status.WorkStatus
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface WorkDao {
@@ -40,13 +39,13 @@ interface WorkDao {
     WHERE status = :status
     AND (:keyword IS NULL OR title LIKE '%' || :keyword || '%')
     AND (:date IS NULL OR date = :date)
-    ORDER BY id DESC
+    ORDER BY createdAt DESC
 """
     )
     fun searchWorks(
         status: WorkStatus,
         keyword: String?,
-        date: String?
+        date: LocalDate?
     ): Flow<List<WorkEntity>>
 
     @Query("SELECT COUNT(*) FROM works WHERE status = :status")

@@ -6,21 +6,25 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.ravihome.R
 import com.example.ravihome.data.entity.WorkEntity
 import com.example.ravihome.databinding.FragmentPlannedWorksBinding
 import com.example.ravihome.ui.adapter.PlannedWorksAdapter
 import com.example.ravihome.ui.export.ExportDialog
 import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
+import com.example.ravihome.ui.util.DateFormatUtils
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.Calendar
 
 @AndroidEntryPoint
@@ -52,28 +56,37 @@ class PlannedWorksFragment : Fragment() {
 
         // Date picker (add)
         binding.etDate.setOnClickListener {
-            showDatePicker { binding.etDate.setText(it) }
+            showDatePicker { binding.etDate.setText(DateFormatUtils.formatInput(it)) }
         }
 
         // Date filter
         binding.tvFilterDate.setOnClickListener {
-            showDatePicker {
-                binding.tvFilterDate.text = it
-                viewModel.setDate(it)
+            showDatePicker { date ->
+                binding.tvFilterDate.text = DateFormatUtils.formatDisplay(date)
+                viewModel.setDate(date)
             }
+        }
+        binding.btnClearFilter.setOnClickListener {
+            binding.tvFilterDate.text = getString(R.string.all_dates)
+            viewModel.setDate(null)
+        }
+
+        binding.etSearch.addTextChangedListener { text ->
+            viewModel.setKeyword(text?.toString())
         }
 
         // Save
         binding.btnSave.setOnClickListener {
             val title = binding.etTitle.text.toString().trim()
             val desc = binding.etDescription.text.toString().trim()
-            val date = binding.etDate.text.toString().trim()
+            val dateText = binding.etDate.text.toString().trim()
+            val date = DateFormatUtils.parseInput(dateText)
 
             when {
                 title.isBlank() ->
                     Snackbar.make(binding.root, "Title is required", Snackbar.LENGTH_SHORT).show()
 
-                date.isBlank() ->
+                date == null ->
                     Snackbar.make(binding.root, "Date is required", Snackbar.LENGTH_SHORT).show()
 
                 else -> {
@@ -92,7 +105,7 @@ class PlannedWorksFragment : Fragment() {
         binding.btnExport.setOnClickListener {
             ExportDialog.show(requireContext()) { _, format ->
                 val rows = adapter.currentList.map {
-                    listOf(it.title, it.date, it.description)
+                    listOf(it.title, DateFormatUtils.formatDisplay(it.date), it.description)
                 }
 
                 when (format) {
@@ -111,6 +124,18 @@ class PlannedWorksFragment : Fragment() {
 
                 binding.emptyState.visibility =
                     if (list.isEmpty()) View.VISIBLE else View.GONE
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.recentPlannedWorks.collect { list ->
+                binding.tvRecent.text = if (list.isEmpty()) {
+                    "No recent planned works"
+                } else {
+                    list.joinToString("\n") {
+                        "${it.title} • ${DateFormatUtils.formatDisplay(it.date)}"
+                    }
+                }
             }
         }
 
@@ -147,7 +172,7 @@ class PlannedWorksFragment : Fragment() {
 
                 Snackbar.make(binding.root, "Work deleted", Snackbar.LENGTH_LONG)
                     .setAction("UNDO") {
-                        viewModel.addPlannedWork("work","work","work")
+                        viewModel.restoreWork(work)
                     }
                     .show()
             }
@@ -157,11 +182,11 @@ class PlannedWorksFragment : Fragment() {
             .show()
     }
 
-    private fun showDatePicker(onDateSelected: (String) -> Unit) {
+    private fun showDatePicker(onDateSelected: (LocalDate) -> Unit) {
         val cal = Calendar.getInstance()
         DatePickerDialog(
             requireContext(),
-            { _, y, m, d -> onDateSelected("$d/${m + 1}/$y") },
+            { _, y, m, d -> onDateSelected(LocalDate.of(y, m + 1, d)) },
             cal.get(Calendar.YEAR),
             cal.get(Calendar.MONTH),
             cal.get(Calendar.DAY_OF_MONTH)

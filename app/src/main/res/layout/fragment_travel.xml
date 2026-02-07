@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_height="match_parent" android:layout_width="wrap_content"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupMode"
+        android:layout_height="match_parent" android:layout_width="wrap_content">
+
+        <com.google.android.material.chip.Chip android:text="Train" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+        <com.google.android.material.chip.Chip android:text="Bus" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+        <com.google.android.material.chip.Chip android:text="Auto" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+    </com.google.android.material.chip.ChipGroup>
+
+    <EditText android:id="@+id/etFrom" android:hint="From" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+    <EditText android:id="@+id/etTo" android:hint="To" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+    <EditText android:id="@+id/etAmount" android:hint="Amount" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+
+    <Button android:id="@+id/btnSaveTravel" android:text="Save Travel" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvTravel" android:layout_height="match_parent" android:layout_width="wrap_content"/>
+</LinearLayout>
