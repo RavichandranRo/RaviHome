@@ -21,7 +21,7 @@ import com.example.ravihome.ui.export.ExportDialog
 import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.DateFormatUtils
-import com.google.android.material.snackbar.Snackbar
+import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -54,7 +54,14 @@ class PlannedWorksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
         adapter = PlannedWorksAdapter(
-            onComplete = { viewModel.markCompleted(it) },
+            onComplete = {
+                viewModel.markCompleted(it)
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Marked completed",
+                    "Moved to Completed Works."
+                )
+            },
             onDelete = { confirmDelete(it) }
         )
 
@@ -91,16 +98,25 @@ class PlannedWorksFragment : Fragment() {
 
             when {
                 title.isBlank() ->
-                    Snackbar.make(binding.root, "Title is required", Snackbar.LENGTH_SHORT).show()
-
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Missing title",
+                        "Please enter a title for the work."
+                    )
                 date == null ->
-                    Snackbar.make(binding.root, "Date is required", Snackbar.LENGTH_SHORT).show()
-
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Missing date",
+                        "Please select a date for the work."
+                    )
                 else -> {
                     viewModel.addPlannedWork(title, date, desc)
 
-                    Snackbar.make(binding.root, "Planned work saved", Snackbar.LENGTH_SHORT).show()
-
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Saved",
+                        "Planned work added."
+                    )
                     binding.etTitle.text?.clear()
                     binding.etDescription.text?.clear()
                     binding.etDate.text?.clear()
@@ -160,11 +176,13 @@ class PlannedWorksFragment : Fragment() {
 
                 viewModel.deleteWork(work.id)
 
-                Snackbar.make(binding.root, "Work deleted", Snackbar.LENGTH_LONG)
-                    .setAction("UNDO") {
-                        viewModel.restoreWork(work)
-                    }
-                    .show()
+                PopupUtils.showUndo(
+                    requireContext(),
+                    "Work deleted",
+                    "Undo this deletion?"
+                ) {
+                    viewModel.restoreWork(work)
+                }
             }
 
         }).attachToRecyclerView(binding.recyclerView)
@@ -177,11 +195,13 @@ class PlannedWorksFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 viewModel.deleteWork(work.id)
 
-                Snackbar.make(binding.root, "Work deleted", Snackbar.LENGTH_LONG)
-                    .setAction("UNDO") {
-                        viewModel.restoreWork(work)
-                    }
-                    .show()
+                PopupUtils.showUndo(
+                    requireContext(),
+                    "Work deleted",
+                    "Undo this deletion?"
+                ) {
+                    viewModel.restoreWork(work)
+                }
             }
             .setNegativeButton("Cancel") { _, _ ->
                 adapter.notifyDataSetChanged()

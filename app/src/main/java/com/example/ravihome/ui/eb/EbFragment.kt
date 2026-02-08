@@ -8,7 +8,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.ravihome.databinding.FragmentEbBinding
-import com.google.android.material.snackbar.Snackbar
+import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -71,7 +71,10 @@ class EbFragment : Fragment() {
         binding.btnRecordPayment.setOnClickListener {
             val amount = latestAmount ?: return@setOnClickListener
             viewModel.recordPayment(amount)
-            Snackbar.make(binding.root, "EB payment saved", Snackbar.LENGTH_SHORT).show()
-        }
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "EB payment saved",
+                "Payment recorded successfully."
+            )        }
     }
 }

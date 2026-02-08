@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">RaviHome</string>
     <string name="all_dates">All dates</string>
+    <string name="ok">OK</string>
+    <string name="undo">Undo</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

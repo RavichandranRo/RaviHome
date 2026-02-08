@@ -8,8 +8,8 @@ import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import com.example.ravihome.databinding.BottomSheetPlannedWorkBinding
 import com.example.ravihome.ui.util.DateFormatUtils
+import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.snackbar.Snackbar
 import java.time.LocalDate
 import java.util.Calendar
 
@@ -42,8 +42,18 @@ class PlannedBottomSheet : BottomSheetDialogFragment() {
             val date = DateFormatUtils.parseInput(dateText)
 
             when {
-                title.isBlank() -> showSnack("Title is required")
-                date == null -> showSnack("Date is required")
+                title.isBlank() -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing title",
+                    "Please enter a title."
+                )
+
+                date == null -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing date",
+                    "Please select a date."
+                )
+
                 else -> {
                     onSave?.invoke(title, date, desc)
                     dismiss()
@@ -74,9 +84,5 @@ class PlannedBottomSheet : BottomSheetDialogFragment() {
             cal.get(Calendar.MONTH),
             cal.get(Calendar.DAY_OF_MONTH)
         ).show()
-    }
-
-    private fun showSnack(message: String) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 }

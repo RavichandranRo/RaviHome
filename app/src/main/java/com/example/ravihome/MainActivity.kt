@@ -8,8 +8,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -32,10 +32,16 @@ class MainActivity : AppCompatActivity() {
             BiometricManager.BIOMETRIC_SUCCESS -> {
                 // OK, continue
             }
+
             else -> {
                 // No biometric → open app normally
                 setContentView(R.layout.activity_main)
                 setupNavigation()
+                PopupUtils.showAutoDismiss(
+                    this,
+                    "Welcome!",
+                    "Your home dashboard is ready."
+                )
                 return
             }
         }
@@ -49,7 +55,11 @@ class MainActivity : AppCompatActivity() {
                     result: BiometricPrompt.AuthenticationResult
                 ) {
                     setupNavigation()
-                    Snackbar.make(findViewById(R.id.root_container), "Welcome back!", Snackbar.LENGTH_SHORT).show()
+                    PopupUtils.showAutoDismiss(
+                        this@MainActivity,
+                        "Welcome back!",
+                        "Your home dashboard is ready."
+                    )
                 }
 
                 override fun onAuthenticationFailed() {

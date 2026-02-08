@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.ravihome.databinding.FragmentTravelBinding
-import com.google.android.material.snackbar.Snackbar
+import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -66,7 +66,11 @@ class TravelFragment : Fragment() {
                 }
 
                 state.message?.let { message ->
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Ticket update",
+                        message
+                    )
                 }
             }
         }
