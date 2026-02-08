@@ -1,18 +1,82 @@
 package com.example.ravihome.ui.planned
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.runtime.Composable
+import android.app.DatePickerDialog
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
+import com.example.ravihome.databinding.BottomSheetPlannedWorkBinding
+import com.example.ravihome.ui.util.DateFormatUtils
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
+import java.time.LocalDate
+import java.util.Calendar
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PlannedBottomSheet(
-    onSave: (PlannedWork) -> Unit,
-    onDismiss: () -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss
-    ) {
-        // form fields here
+class PlannedBottomSheet : BottomSheetDialogFragment() {
+
+    private var _binding: BottomSheetPlannedWorkBinding? = null
+    private val binding: BottomSheetPlannedWorkBinding
+        get() = _binding!!
+
+    var onSave: ((String, LocalDate, String) -> Unit)? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = BottomSheetPlannedWorkBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        binding.etDate.setOnClickListener {
+            showDatePicker { binding.etDate.setText(DateFormatUtils.formatInput(it)) }
+        }
+
+        binding.btnSave.setOnClickListener {
+            val title = binding.etTitle.text.toString().trim()
+            val desc = binding.etDescription.text.toString().trim()
+            val dateText = binding.etDate.text.toString().trim()
+            val date = DateFormatUtils.parseInput(dateText)
+
+            when {
+                title.isBlank() -> showSnack("Title is required")
+                date == null -> showSnack("Date is required")
+                else -> {
+                    onSave?.invoke(title, date, desc)
+                    dismiss()
+                }
+            }
+        }
+
+        binding.btnCancel.setOnClickListener { dismiss() }
+
+        binding.etTitle.addTextChangedListener {
+            if (it?.isNotBlank() == true) {
+                binding.inputTitle.error = null
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun showDatePicker(onDateSelected: (LocalDate) -> Unit) {
+        val cal = Calendar.getInstance()
+        DatePickerDialog(
+            requireContext(),
+            { _, y, m, d -> onDateSelected(LocalDate.of(y, m + 1, d)) },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showSnack(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 }

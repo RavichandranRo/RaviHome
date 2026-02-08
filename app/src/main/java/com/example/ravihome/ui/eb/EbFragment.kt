@@ -24,7 +24,11 @@ class EbFragment : Fragment() {
         exitTransition = MaterialFadeThrough()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         binding = FragmentEbBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -32,7 +36,7 @@ class EbFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var latestAmount: Float? = null
 
-        val recalc: () -> Unit = {
+        fun recalc() {
             val prev = binding.etPrevious.text.toString().toFloatOrNull()
             val curr = binding.etCurrent.text.toString().toFloatOrNull()
             binding.tilCurrent.error = null
@@ -42,14 +46,15 @@ class EbFragment : Fragment() {
             if (prev == null || curr == null) {
                 binding.tvUnits.text = "Units: --"
                 binding.tvAmount.text = "Amount: --"
-                return@recalc
+                return
             }
+
             val units = curr - prev
             if (units < 0) {
                 binding.tilCurrent.error = "Current reading must be greater than previous"
                 binding.tvUnits.text = "Units: --"
                 binding.tvAmount.text = "Amount: --"
-                return@recalc
+                return
             }
 
             val amount = viewModel.calculate(units)
@@ -58,6 +63,7 @@ class EbFragment : Fragment() {
             binding.tvUnits.text = "Units: %.1f".format(units)
             binding.tvAmount.text = "Amount: ₹%.2f".format(amount)
         }
+
 
         binding.etPrevious.addTextChangedListener { recalc() }
         binding.etCurrent.addTextChangedListener { recalc() }

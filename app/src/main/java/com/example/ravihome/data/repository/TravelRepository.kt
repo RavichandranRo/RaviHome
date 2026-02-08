@@ -1,10 +1,13 @@
-package com.example.ravihome.ui.travel
+package com.example.ravihome.data.repository
 
+import com.example.ravihome.BuildConfig
+import com.example.ravihome.ui.travel.TravelStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import javax.inject.Inject
 
 class TravelRepository @Inject constructor() {
@@ -18,11 +21,13 @@ class TravelRepository @Inject constructor() {
             return@withContext Result.failure(IllegalStateException("PNR API key/host missing"))
         }
 
-        val url = URL("$baseUrl/pnr-check/$pnr")
+        val encodedPnr = URLEncoder.encode(pnr, Charsets.UTF_8.name())
+        val url = URL("$baseUrl/pnr-check/$encodedPnr")
         val connection = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("X-RapidAPI-Key", apiKey)
             setRequestProperty("X-RapidAPI-Host", apiHost)
+            setRequestProperty("Accept", "application/json")
             connectTimeout = 10000
             readTimeout = 10000
         }
@@ -35,9 +40,11 @@ class TravelRepository @Inject constructor() {
                 connection.errorStream
             }
 
-            val body = stream.bufferedReader().use { it.readText() }
+            val body = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (responseCode !in 200..299) {
-                return@withContext Result.failure(IllegalStateException("API error: $responseCode"))
+                val trimmed = body.trim().take(200)
+                val suffix = if (trimmed.isNotBlank()) ": $trimmed" else ""
+                return@withContext Result.failure(IllegalStateException("API error: $responseCode$suffix"))
             }
             val json = JSONObject(body)
             val data = json.optJSONObject("data") ?: JSONObject()
@@ -66,7 +73,9 @@ class TravelRepository @Inject constructor() {
 
         return TravelStatus(
             pnr = pnr,
-            trainName = listOfNotNull(trainName.takeIf { it.isNotBlank() }, trainNumber.takeIf { it.isNotBlank() })
+            trainName = listOfNotNull(
+                trainName.takeIf { it.isNotBlank() },
+                trainNumber.takeIf { it.isNotBlank() })
                 .joinToString(" ")
                 .trim(),
             from = from.ifBlank { "-" },
