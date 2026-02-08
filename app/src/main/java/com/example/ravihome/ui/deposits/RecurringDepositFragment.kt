@@ -1,0 +1,182 @@
+package com.example.ravihome.ui.deposits
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.ravihome.databinding.FragmentDepositRecurringBinding
+import com.example.ravihome.ui.export.ExportDialog
+import com.example.ravihome.ui.export.ExportFormat
+import com.example.ravihome.ui.export.ExportUtils
+import com.example.ravihome.ui.util.PopupUtils
+import kotlinx.coroutines.launch
+
+class RecurringDepositFragment : Fragment() {
+
+    private lateinit var binding: FragmentDepositRecurringBinding
+    private val viewModel: RecurringDepositViewModel by viewModels()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentDepositRecurringBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val adapter = DepositAdapter(
+            maturityCalculator = {
+                DepositCalculator.recurringMaturity(it.amount, it.durationMonths, it.rate)
+            },
+            onEdit = { entry ->
+                DepositEditDialog.show(
+                    requireContext(),
+                    entry,
+                    onSave = viewModel::update
+                )
+            }
+        )
+
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerView.adapter = adapter
+
+        fun recalcMaturity() {
+            val amount = binding.etAmount.text?.toString()?.toDoubleOrNull()
+            val duration = binding.etDuration.text?.toString()?.toIntOrNull()
+            val rate = binding.etRate.text?.toString()?.toDoubleOrNull()
+            if (amount == null || duration == null || rate == null) {
+                binding.tvMaturity.text = "Maturity amount: --"
+                return
+            }
+            val maturity = DepositCalculator.recurringMaturity(amount, duration, rate)
+            binding.tvMaturity.text = "Maturity amount: ₹%.2f".format(maturity)
+        }
+
+        binding.etAmount.addTextChangedListener { recalcMaturity() }
+        binding.etDuration.addTextChangedListener { recalcMaturity() }
+        binding.etRate.addTextChangedListener { recalcMaturity() }
+
+        binding.btnSave.setOnClickListener {
+            val amount = binding.etAmount.text?.toString()?.toDoubleOrNull()
+            val duration = binding.etDuration.text?.toString()?.toIntOrNull()
+            val rate = binding.etRate.text?.toString()?.toDoubleOrNull()
+            val bank = binding.etBank.text?.toString()?.trim().orEmpty()
+
+            when {
+                amount == null || amount <= 0 -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing amount",
+                    "Enter a valid monthly amount."
+                )
+
+                duration == null || duration <= 0 -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing duration",
+                    "Enter duration in months."
+                )
+
+                rate == null || rate <= 0 -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing rate",
+                    "Enter a valid interest rate."
+                )
+
+                bank.isBlank() -> PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing bank",
+                    "Enter the bank name."
+                )
+
+                else -> {
+                    viewModel.add(
+                        DepositEntry(
+                            id = System.currentTimeMillis(),
+                            amount = amount,
+                            durationMonths = duration,
+                            rate = rate,
+                            bank = bank,
+                            createdAt = System.currentTimeMillis()
+                        )
+                    )
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Saved",
+                        "Recurring deposit added."
+                    )
+                    binding.etAmount.text?.clear()
+                    binding.etDuration.text?.clear()
+                    binding.etRate.text?.clear()
+                    binding.etBank.text?.clear()
+                    binding.tvMaturity.text = "Maturity amount: --"
+                }
+            }
+        }
+
+        binding.btnExport.setOnClickListener {
+            ExportDialog.show(requireContext()) { _, format ->
+                val rows = adapter.currentList.map {
+                    listOf(
+                        it.bank,
+                        it.amount.toString(),
+                        it.durationMonths.toString(),
+                        it.rate.toString(),
+                        "%.2f".format(
+                            DepositCalculator.recurringMaturity(
+                                it.amount,
+                                it.durationMonths,
+                                it.rate
+                            )
+                        )
+                    )
+                }
+
+                when (format) {
+                    ExportFormat.CSV -> ExportUtils.exportCsv(
+                        requireContext(),
+                        "recurring_deposits",
+                        rows
+                    )
+
+                    ExportFormat.EXCEL -> ExportUtils.exportExcel(
+                        requireContext(),
+                        "recurring_deposits",
+                        rows
+                    )
+
+                    ExportFormat.PDF -> ExportUtils.exportPdf(
+                        requireContext(),
+                        "recurring_deposits",
+                        rows
+                    )
+
+                    ExportFormat.HTML -> ExportUtils.exportHtml(
+                        requireContext(),
+                        "recurring_deposits",
+                        rows
+                    )
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.entries.collect { list ->
+                adapter.submitList(list)
+                binding.emptyState.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                binding.tvRecent.text = if (list.isEmpty()) {
+                    "No recent deposits"
+                } else {
+                    list.take(3).joinToString("\n") {
+                        "${it.bank} • ₹%.2f".format(it.amount)
+                    }
+                }
+            }
+        }
+    }
+}

@@ -20,4 +20,8 @@
         android:id="@+id/paymentFragment"
         android:icon="@android:drawable/ic_menu_send"
         android:title="Payments" />
+    <item
+        android:id="@+id/depositsFragment"
+        android:icon="@drawable/ic_deposits"
+        android:title="Deposits" />
 </menu>

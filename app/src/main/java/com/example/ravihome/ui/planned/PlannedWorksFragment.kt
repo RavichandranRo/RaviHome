@@ -54,13 +54,22 @@ class PlannedWorksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
         adapter = PlannedWorksAdapter(
-            onComplete = {
-                viewModel.markCompleted(it)
-                PopupUtils.showAutoDismiss(
-                    requireContext(),
-                    "Marked completed",
-                    "Moved to Completed Works."
-                )
+            onCompleteRequested = { work, onReset ->
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Mark as completed?")
+                    .setMessage("This will move the work to Completed Works.")
+                    .setPositiveButton("Confirm") { _, _ ->
+                        viewModel.markCompleted(work)
+                        PopupUtils.showAutoDismiss(
+                            requireContext(),
+                            "Marked completed",
+                            "Moved to Completed Works."
+                        )
+                    }
+                    .setNegativeButton("Cancel") { _, _ ->
+                        onReset()
+                    }
+                    .show()
             },
             onDelete = { confirmDelete(it) }
         )

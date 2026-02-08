@@ -1,6 +1,7 @@
 package com.example.ravihome.ui.eb
 
 import android.os.Bundle
+import android.app.DatePickerDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,8 @@ import com.example.ravihome.databinding.FragmentEbBinding
 import com.example.ravihome.ui.util.PopupUtils
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
+import java.time.LocalDate
+import java.util.Calendar
 
 @AndroidEntryPoint
 class EbFragment : Fragment() {
@@ -35,6 +38,7 @@ class EbFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var latestAmount: Float? = null
+        var reminderDate: LocalDate? = null
 
         fun recalc() {
             val prev = binding.etPrevious.text.toString().toFloatOrNull()
@@ -75,6 +79,35 @@ class EbFragment : Fragment() {
                 requireContext(),
                 "EB payment saved",
                 "Payment recorded successfully."
-            )        }
+            )
+        }
+
+        binding.switchBillGenerated.setOnCheckedChangeListener { _, checked ->
+            val message = if (checked) {
+                "Bill marked as generated."
+            } else {
+                "Bill status cleared."
+            }
+            PopupUtils.showAutoDismiss(requireContext(), "EB bill status", message)
+        }
+
+        binding.btnSetReminder.setOnClickListener {
+            val cal = Calendar.getInstance()
+            DatePickerDialog(
+                requireContext(),
+                { _, y, m, d ->
+                    reminderDate = LocalDate.of(y, m + 1, d)
+                    binding.tvReminder.text = "Reminder: ${reminderDate}"
+                    PopupUtils.showAutoDismiss(
+                        requireContext(),
+                        "Reminder set",
+                        "EB payment reminder saved."
+                    )
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
     }
 }

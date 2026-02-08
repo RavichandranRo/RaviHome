@@ -10,7 +10,7 @@ import com.example.ravihome.databinding.RowPlannedWorkBinding
 import com.example.ravihome.ui.util.DateFormatUtils
 
 class PlannedWorksAdapter(
-    private val onComplete: (WorkEntity) -> Unit,
+    private val onCompleteRequested: (WorkEntity, () -> Unit) -> Unit,
     private val onDelete: (WorkEntity) -> Unit
 ) : ListAdapter<WorkEntity, PlannedWorksAdapter.VH>(DIFF) {
 
@@ -39,7 +39,9 @@ class PlannedWorksAdapter(
             b.cbComplete.setOnCheckedChangeListener(null)
             b.cbComplete.isChecked = false
             b.cbComplete.setOnCheckedChangeListener { _, checked ->
-                if (checked) {onComplete(item)}
+                if (checked) {
+                    onCompleteRequested(item) { b.cbComplete.isChecked = false }
+                }
             }
             b.root.setOnLongClickListener {
                 onDelete(item)

@@ -25,4 +25,7 @@
     <fragment
         android:id="@+id/paymentFragment"
         android:name="com.example.ravihome.ui.payment.PaymentFragment" />
+    <fragment
+        android:id="@+id/depositsFragment"
+        android:name="com.example.ravihome.ui.deposits.DepositsFragment" />
 </navigation>
