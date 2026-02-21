@@ -22,7 +22,7 @@ class TravelRepository @Inject constructor() {
         }
 
         val encodedPnr = URLEncoder.encode(pnr, Charsets.UTF_8.name())
-        val url = URL("$baseUrl/pnr-check/$encodedPnr")
+        val url = URL("$baseUrl/getPNRStatus/$encodedPnr")
         val connection = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("X-RapidAPI-Key", apiKey)

@@ -22,6 +22,7 @@ import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.DateFormatUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -35,6 +36,7 @@ class PlannedWorksFragment : Fragment() {
     private val viewModel: PlannedWorksViewModel by viewModels()
 
     private lateinit var adapter: PlannedWorksAdapter
+    private val voiceInputHelper by lazy { VoiceInputHelper(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +100,10 @@ class PlannedWorksFragment : Fragment() {
             viewModel.setKeyword(text?.toString())
         }
 
+        voiceInputHelper.attachTo(binding.etTitle, "Speak work title")
+        voiceInputHelper.attachTo(binding.etDescription, "Speak work description")
+        voiceInputHelper.attachTo(binding.etSearch, "Speak search keyword")
+
         // Save
         binding.btnSave.setOnClickListener {
             val title = binding.etTitle.text.toString().trim()
@@ -112,12 +118,14 @@ class PlannedWorksFragment : Fragment() {
                         "Missing title",
                         "Please enter a title for the work."
                     )
+
                 date == null ->
                     PopupUtils.showAutoDismiss(
                         requireContext(),
                         "Missing date",
                         "Please select a date for the work."
                     )
+
                 else -> {
                     viewModel.addPlannedWork(title, date, desc)
 
@@ -136,8 +144,11 @@ class PlannedWorksFragment : Fragment() {
         // Export (filtered list respected ✔️)
         binding.btnExport.setOnClickListener {
             ExportDialog.show(requireContext()) { _, format ->
-                val rows = adapter.currentList.map {
-                    listOf(it.title, DateFormatUtils.formatDisplay(it.date), it.description)
+                val rows = buildList {
+                    add(listOf("Title", "Date", "Description"))
+                    addAll(adapter.currentList.map {
+                        listOf(it.title, DateFormatUtils.formatDisplay(it.date), it.description)
+                    })
                 }
 
                 when (format) {

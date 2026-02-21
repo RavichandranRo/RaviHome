@@ -9,36 +9,35 @@ import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentDebitBinding
 import com.example.ravihome.ui.util.BillStorageUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class PaymentDebitFragment : Fragment() {
 
     private lateinit var binding: FragmentPaymentDebitBinding
+    private val voiceInputHelper by lazy { VoiceInputHelper(this) }
     private val pickBill =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri ?: return@registerForActivityResult
             requireContext().contentResolver.takePersistableUriPermission(
-                uri,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
             val path = BillStorageUtils.storeBill(requireContext(), uri)
             PopupUtils.showAutoDismiss(
-                requireContext(),
-                "Bill saved",
-                "Stored in: $path"
+                requireContext(), "Bill saved", "Stored in: $path"
             )
         }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         binding = FragmentPaymentDebitBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
+        voiceInputHelper.attachTo(binding.etNote, "Speak note")
         binding.btnPay.setOnClickListener {
             val amountText = binding.etAmount.text?.toString()?.trim().orEmpty()
             val amount = amountText.toDoubleOrNull() ?: 0.0
@@ -64,13 +63,10 @@ class PaymentDebitFragment : Fragment() {
         dialogView.findViewById<android.widget.TextView>(com.example.ravihome.R.id.tvNote).text =
             if (note.isBlank()) "Note: --" else "Note: $note"
 
-        MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogView)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Confirm") { _, _ ->
+        MaterialAlertDialogBuilder(requireContext()).setView(dialogView)
+            .setNegativeButton("Cancel", null).setPositiveButton("Confirm") { _, _ ->
                 showSuccessDialog(type, amount)
-            }
-            .show()
+            }.show()
     }
 
     private fun showSuccessDialog(type: String, amount: Double) {
@@ -78,9 +74,7 @@ class PaymentDebitFragment : Fragment() {
             layoutInflater.inflate(com.example.ravihome.R.layout.dialog_payment_success, null)
         dialogView.findViewById<android.widget.TextView>(com.example.ravihome.R.id.tvMessage).text =
             "$type payment of ₹%.2f completed".format(amount)
-        MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogView)
-            .setPositiveButton("Done", null)
-            .show()
+        MaterialAlertDialogBuilder(requireContext()).setView(dialogView)
+            .setPositiveButton("Done", null).show()
     }
 }

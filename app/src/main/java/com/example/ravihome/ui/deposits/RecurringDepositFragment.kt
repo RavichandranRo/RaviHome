@@ -14,12 +14,14 @@ import com.example.ravihome.ui.export.ExportDialog
 import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.VoiceInputHelper
 import kotlinx.coroutines.launch
 
 class RecurringDepositFragment : Fragment() {
 
     private lateinit var binding: FragmentDepositRecurringBinding
     private val viewModel: RecurringDepositViewModel by viewModels()
+    private val voiceInputHelper by lazy { VoiceInputHelper(this) }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,6 +64,10 @@ class RecurringDepositFragment : Fragment() {
         binding.etAmount.addTextChangedListener { recalcMaturity() }
         binding.etDuration.addTextChangedListener { recalcMaturity() }
         binding.etRate.addTextChangedListener { recalcMaturity() }
+        voiceInputHelper.attachTo(binding.etAmount, "Speak monthly amount")
+        voiceInputHelper.attachTo(binding.etDuration, "Speak duration in months")
+        voiceInputHelper.attachTo(binding.etRate, "Speak rate of interest")
+        voiceInputHelper.attachTo(binding.etBank, "Speak bank name")
 
         binding.btnSave.setOnClickListener {
             val amount = binding.etAmount.text?.toString()?.toDoubleOrNull()
@@ -121,20 +127,31 @@ class RecurringDepositFragment : Fragment() {
 
         binding.btnExport.setOnClickListener {
             ExportDialog.show(requireContext()) { _, format ->
-                val rows = adapter.currentList.map {
-                    listOf(
-                        it.bank,
-                        it.amount.toString(),
-                        it.durationMonths.toString(),
-                        it.rate.toString(),
-                        "%.2f".format(
-                            DepositCalculator.recurringMaturity(
-                                it.amount,
-                                it.durationMonths,
-                                it.rate
-                            )
+                val rows = buildList {
+                    add(
+                        listOf(
+                            "Bank",
+                            "Monthly amount",
+                            "Duration (months)",
+                            "Rate (%)",
+                            "Maturity"
                         )
                     )
+                    addAll(adapter.currentList.map {
+                        listOf(
+                            it.bank,
+                            it.amount.toString(),
+                            it.durationMonths.toString(),
+                            it.rate.toString(),
+                            "%.2f".format(
+                                DepositCalculator.recurringMaturity(
+                                    it.amount,
+                                    it.durationMonths,
+                                    it.rate
+                                )
+                            )
+                        )
+                    })
                 }
 
                 when (format) {

@@ -14,12 +14,14 @@ import com.example.ravihome.ui.export.ExportDialog
 import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.VoiceInputHelper
 import kotlinx.coroutines.launch
 
 class FixedDepositFragment : Fragment() {
 
     private lateinit var binding: FragmentDepositFixedBinding
     private val viewModel: FixedDepositViewModel by viewModels()
+    private val voiceInputHelper by lazy { VoiceInputHelper(this) }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,6 +64,10 @@ class FixedDepositFragment : Fragment() {
         binding.etAmount.addTextChangedListener { recalcMaturity() }
         binding.etDuration.addTextChangedListener { recalcMaturity() }
         binding.etRate.addTextChangedListener { recalcMaturity() }
+        voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
+        voiceInputHelper.attachTo(binding.etDuration, "Speak duration in months")
+        voiceInputHelper.attachTo(binding.etRate, "Speak rate of interest")
+        voiceInputHelper.attachTo(binding.etBank, "Speak bank name")
 
         binding.btnSave.setOnClickListener {
             val amount = binding.etAmount.text?.toString()?.toDoubleOrNull()
@@ -121,20 +127,23 @@ class FixedDepositFragment : Fragment() {
 
         binding.btnExport.setOnClickListener {
             ExportDialog.show(requireContext()) { _, format ->
-                val rows = adapter.currentList.map {
-                    listOf(
-                        it.bank,
-                        it.amount.toString(),
-                        it.durationMonths.toString(),
-                        it.rate.toString(),
-                        "%.2f".format(
-                            DepositCalculator.fixedMaturity(
-                                it.amount,
-                                it.durationMonths,
-                                it.rate
+                val rows = buildList {
+                    add(listOf("Bank", "Amount", "Duration (months)", "Rate (%)", "Maturity"))
+                    addAll(adapter.currentList.map {
+                        listOf(
+                            it.bank,
+                            it.amount.toString(),
+                            it.durationMonths.toString(),
+                            it.rate.toString(),
+                            "%.2f".format(
+                                DepositCalculator.fixedMaturity(
+                                    it.amount,
+                                    it.durationMonths,
+                                    it.rate
+                                )
                             )
                         )
-                    )
+                    })
                 }
 
                 when (format) {

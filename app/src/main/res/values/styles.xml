@@ -5,6 +5,8 @@
         <item name="android:windowAnimationStyle">@style/Animation.RaviHome.Dialog</item>
     </style>
 
+    <style name="Animation.RaviHome" parent="@android:style/Animation"/>
+
     <style name="Animation.RaviHome.Dialog">
         <item name="android:windowEnterAnimation">@anim/dialog_enter</item>
         <item name="android:windowExitAnimation">@anim/dialog_exit</item>

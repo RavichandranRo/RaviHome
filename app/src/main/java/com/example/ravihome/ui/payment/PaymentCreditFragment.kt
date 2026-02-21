@@ -9,11 +9,13 @@ import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentCreditBinding
 import com.example.ravihome.ui.util.BillStorageUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class PaymentCreditFragment : Fragment() {
 
     private lateinit var binding: FragmentPaymentCreditBinding
+    private val voiceInputHelper by lazy { VoiceInputHelper(this) }
     private val pickBill =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri ?: return@registerForActivityResult
@@ -39,6 +41,8 @@ class PaymentCreditFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
+        voiceInputHelper.attachTo(binding.etNote, "Speak note")
         binding.btnPay.setOnClickListener {
             val amountText = binding.etAmount.text?.toString()?.trim().orEmpty()
             val amount = amountText.toDoubleOrNull() ?: 0.0
