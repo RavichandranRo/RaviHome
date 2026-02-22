@@ -9,6 +9,8 @@ import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentDebitBinding
 import com.example.ravihome.ui.util.BillStorageUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
+import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -36,6 +38,20 @@ class PaymentDebitFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        fun refreshRecent() {
+            val items = LocalHistoryStore.list(requireContext(), "payment_debit")
+            binding.tvRecent.text =
+                if (items.isEmpty()) "No recent payments" else items.take(3).joinToString("\n")
+        }
+        refreshRecent()
+
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All Debit payments",
+                LocalHistoryStore.list(requireContext(), "payment_debit")
+            )
+        }
         voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
         voiceInputHelper.attachTo(binding.etNote, "Speak note")
         binding.btnPay.setOnClickListener {
@@ -65,6 +81,14 @@ class PaymentDebitFragment : Fragment() {
 
         MaterialAlertDialogBuilder(requireContext()).setView(dialogView)
             .setNegativeButton("Cancel", null).setPositiveButton("Confirm") { _, _ ->
+                LocalHistoryStore.append(
+                    requireContext(),
+                    "payment_debit",
+                    "Debit: ₹%.2f • ".format(amount) + (if (note.isBlank()) "No note" else note)
+                )
+                binding.tvRecent.text =
+                    LocalHistoryStore.list(requireContext(), "payment_debit").take(3)
+                        .joinToString("\n")
                 showSuccessDialog(type, amount)
             }.show()
     }

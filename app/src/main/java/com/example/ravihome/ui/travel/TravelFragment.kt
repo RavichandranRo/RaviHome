@@ -1,7 +1,7 @@
 package com.example.ravihome.ui.travel
 
-import android.os.Bundle
 import android.app.DatePickerDialog
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +10,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.ravihome.databinding.FragmentTravelBinding
+import com.example.ravihome.ui.export.ExportUtils
+import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
@@ -41,6 +44,51 @@ class TravelFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var reminderDate: LocalDate? = null
+        fun refreshRecent() {
+            val items = LocalHistoryStore.list(requireContext(), "travel_tickets")
+            binding.tvRecent.text =
+                if (items.isEmpty()) "No recent tickets" else items.take(3).joinToString("\n")
+        }
+
+        refreshRecent()
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All saved tickets",
+                LocalHistoryStore.list(requireContext(), "travel_tickets")
+            )
+        }
+
+        binding.btnPrintTicket.setOnClickListener {
+            val status = viewModel.uiState.value.status
+            if (status == null) {
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Missing ticket",
+                    "Fetch a ticket before printing."
+                )
+            } else {
+                val rows = listOf(
+                    listOf("PNR", "Train/Bus", "From", "To", "Date", "Status", "Coach", "Seat"),
+                    listOf(
+                        status.pnr,
+                        status.trainName,
+                        status.from,
+                        status.to,
+                        status.date,
+                        status.status,
+                        status.coach,
+                        status.seat
+                    )
+                )
+                ExportUtils.exportPdf(requireContext(), "travel_ticket_${status.pnr}", rows)
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Printed",
+                    "Ticket PDF generated in app storage."
+                )
+            }
+        }
         binding.btnFetch.setOnClickListener {
             val pnr = binding.etPnr.text?.toString()?.trim().orEmpty()
             viewModel.fetchPnrStatus(pnr)
@@ -112,6 +160,12 @@ class TravelFragment : Fragment() {
                 binding.cardStatus.isVisible = state.status != null
 
                 state.status?.let { status ->
+                    LocalHistoryStore.append(
+                        requireContext(),
+                        "travel_tickets",
+                        "${status.trainName} • ${status.pnr} • ${status.from}→${status.to} • ${status.seat}"
+                    )
+                    refreshRecent()
                     binding.tvTrain.text = "${status.trainName} (${status.pnr})"
                     binding.tvRoute.text = "${status.from} ➜ ${status.to}"
                     binding.tvDate.text = "Journey: ${status.date}"

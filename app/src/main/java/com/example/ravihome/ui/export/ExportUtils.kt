@@ -12,8 +12,11 @@ import java.io.File
 
 object ExportUtils {
 
+    private fun targetDir(context: Context): File =
+        context.getExternalFilesDir(null) ?: context.filesDir
+
     fun exportCsv(context: Context, fileName: String, rows: List<List<String>>) {
-        val file = File(context.getExternalFilesDir(null), "$fileName.csv")
+        val file = File(targetDir(context), "$fileName.csv")
         file.printWriter().use { out ->
             rows.forEach { row ->
                 out.println(row.joinToString(",") { escapeCsv(it) })

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:startDestination="@id/dashboardFragment">
+    app:startDestination="@id/welcomeFragment">
 
     <fragment
-        android:id="@+id/dashboardFragment"
-        android:name="com.example.ravihome.ui.dashboard.DashboardFragment" />
+        android:id="@+id/welcomeFragment"
+        android:name="com.example.ravihome.ui.dashboard.WelcomeFragment" />
     <fragment
         android:id="@+id/plannedWorksFragment"
         android:name="com.example.ravihome.ui.planned.PlannedWorksFragment" />
@@ -25,6 +25,7 @@
     <fragment
         android:id="@+id/paymentFragment"
         android:name="com.example.ravihome.ui.payment.PaymentFragment" />
+
     <fragment
         android:id="@+id/depositsFragment"
         android:name="com.example.ravihome.ui.deposits.DepositsFragment" />

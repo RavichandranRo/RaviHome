@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ravihome.databinding.FragmentCompletedWorksBinding
 import com.example.ravihome.ui.adapter.CompletedWorksAdapter
+import com.example.ravihome.ui.util.DateFormatUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -42,11 +44,30 @@ class CompletedWorksFragment : Fragment() {
                 adapter.submitList(it)
                 binding.emptyState.visibility =
                     if (it.isEmpty()) View.VISIBLE else View.GONE
+                binding.tvRecent.text = if (it.isEmpty()) {
+                    "No recent completed works"
+                } else {
+                    it.take(3).joinToString("\n") { work ->
+                        "${work.title} • ${DateFormatUtils.formatDisplay(work.date)}"
+                    }
+                }
             }
         }
 
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All completed works",
+                adapter.currentList.map { "${it.title} • ${DateFormatUtils.formatDisplay(it.date)}" }
+            )
+        }
+
         val swipeHandler = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
-            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) = false
+            override fun onMove(
+                rv: RecyclerView,
+                vh: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ) = false
 
             override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {
                 val work = adapter.currentList[vh.adapterPosition]

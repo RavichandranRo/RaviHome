@@ -76,7 +76,11 @@ data class TravelStatus(
     val status: String,
     val coach: String,
     val seat: String,
-    val chartPrepared: Boolean
+    val chartPrepared: Boolean,
+    val departureTime: String = "-",
+    val arrivalTime: String = "-",
+    val fare: String = "-",
+    val berthType: String = "-"
 )
 
 data class TravelStats(

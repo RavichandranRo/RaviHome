@@ -22,6 +22,7 @@ import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.DateFormatUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
 import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
@@ -140,7 +141,13 @@ class PlannedWorksFragment : Fragment() {
                 }
             }
         }
-
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All planned works",
+                adapter.currentList.map { "${it.title} • ${DateFormatUtils.formatDisplay(it.date)}\n${it.description}" }
+            )
+        }
         // Export (filtered list respected ✔️)
         binding.btnExport.setOnClickListener {
             ExportDialog.show(requireContext()) { _, format ->

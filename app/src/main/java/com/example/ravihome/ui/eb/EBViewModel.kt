@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ravihome.data.repository.WorkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -11,6 +14,10 @@ import javax.inject.Inject
 class EbViewModel @Inject constructor(
     private val repository: WorkRepository
 ) : ViewModel() {
+
+    val ebHistory = repository.completedWorks()
+        .map { works -> works.filter { it.title.contains("EB", ignoreCase = true) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun calculate(units: Float): Float {
         return when {

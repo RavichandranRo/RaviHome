@@ -20,12 +20,14 @@ object PopupUtils {
             context,
             R.style.ThemeOverlay_RaviHome_AnimatedDialog
         )
-            .setTitle(title)
+            .setTitle("✅ $title")
+            .setIcon(R.drawable.ic_launcher_foreground)
             .setMessage(message)
             .setPositiveButton(R.string.ok, null)
             .create()
 
         dialog.show()
+        VoiceFeedbackSpeaker.speak(context, "$title. $message")
         Handler(Looper.getMainLooper()).postDelayed({ dialog.dismiss() }, AUTO_DISMISS_MS)
     }
 
@@ -47,13 +49,15 @@ object PopupUtils {
             context,
             R.style.ThemeOverlay_RaviHome_AnimatedDialog
         )
-            .setTitle(title)
+            .setTitle("✅ $title")
+            .setIcon(R.drawable.ic_launcher_foreground)
             .setMessage(message)
             .setPositiveButton(R.string.undo) { _, _ -> onUndo() }
             .setNegativeButton(R.string.dismiss, null)
             .create()
 
         dialog.show()
+        VoiceFeedbackSpeaker.speak(context, "$title. $message")
         Handler(Looper.getMainLooper()).postDelayed({ dialog.dismiss() }, AUTO_DISMISS_MS)
     }
 }

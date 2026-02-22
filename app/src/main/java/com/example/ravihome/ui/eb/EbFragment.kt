@@ -1,17 +1,20 @@
 package com.example.ravihome.ui.eb
 
-import android.os.Bundle
 import android.app.DatePickerDialog
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.example.ravihome.databinding.FragmentEbBinding
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Calendar
 
@@ -91,6 +94,24 @@ class EbFragment : Fragment() {
             PopupUtils.showAutoDismiss(requireContext(), "EB bill status", message)
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.ebHistory.collect { entries ->
+                binding.tvRecent.text = if (entries.isEmpty()) {
+                    "No recent EB entries"
+                } else {
+                    entries.take(3)
+                        .joinToString("\n") { "${it.title} • ₹%.2f".format(it.amount ?: 0.0) }
+                }
+            }
+        }
+
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All saved EB items",
+                viewModel.ebHistory.value.map { "${it.title} • ₹%.2f".format(it.amount ?: 0.0) }
+            )
+        }
         binding.btnSetReminder.setOnClickListener {
             val cal = Calendar.getInstance()
             DatePickerDialog(

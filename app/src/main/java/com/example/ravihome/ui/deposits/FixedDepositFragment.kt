@@ -14,6 +14,7 @@ import com.example.ravihome.ui.export.ExportDialog
 import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
 import com.example.ravihome.ui.util.VoiceInputHelper
 import kotlinx.coroutines.launch
 
@@ -174,6 +175,13 @@ class FixedDepositFragment : Fragment() {
             }
         }
 
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All fixed deposits",
+                adapter.currentList.map { "${it.bank} • ₹%.2f".format(it.amount) }
+            )
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.entries.collect { list ->
                 adapter.submitList(list)

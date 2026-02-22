@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Secret API Keys
+.env
+.aider*
+.env
+.env

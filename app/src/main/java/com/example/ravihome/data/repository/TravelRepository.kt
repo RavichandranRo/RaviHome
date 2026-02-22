@@ -70,7 +70,13 @@ class TravelRepository @Inject constructor() {
         val statusLabel = normalizeStatus(currentStatus.ifBlank { bookingStatus })
         val coach = data.optString("journeyClass", "")
         val seat = firstPassenger?.optString("seatNo", "") ?: ""
-
+        val departureTime = data.optString("departureTime", data.optString("boardingTime", "-"))
+        val arrivalTime =
+            data.optString("arrivalTime", data.optString("destinationArrivalTime", "-"))
+        val fare = data.optString("ticketFare", data.optString("fare", "-"))
+        val berthType =
+            firstPassenger?.optString("berthType", firstPassenger?.optString("bookingStatus", "-"))
+                ?: "-"
         return TravelStatus(
             pnr = pnr,
             trainName = listOfNotNull(
@@ -84,7 +90,11 @@ class TravelRepository @Inject constructor() {
             status = statusLabel,
             coach = coach.ifBlank { "-" },
             seat = seat.ifBlank { "-" },
-            chartPrepared = chartStatus.equals("PREPARED", ignoreCase = true)
+            chartPrepared = chartStatus.equals("PREPARED", ignoreCase = true),
+            departureTime = departureTime.ifBlank { "-" },
+            arrivalTime = arrivalTime.ifBlank { "-" },
+            fare = fare.ifBlank { "-" },
+            berthType = berthType.ifBlank { "-" }
         )
     }
 

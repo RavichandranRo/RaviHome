@@ -9,6 +9,8 @@ import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentCreditBinding
 import com.example.ravihome.ui.util.BillStorageUtils
 import com.example.ravihome.ui.util.PopupUtils
+import com.example.ravihome.ui.util.ViewAllDialogUtils
+import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -40,7 +42,22 @@ class PaymentCreditFragment : Fragment() {
         return binding.root
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        fun refreshRecent() {
+            val items = LocalHistoryStore.list(requireContext(), "payment_credit")
+            binding.tvRecent.text =
+                if (items.isEmpty()) "No recent payments" else items.take(3).joinToString("\n")
+        }
+        refreshRecent()
+
+        binding.btnViewAll.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "All Credit payments",
+                LocalHistoryStore.list(requireContext(), "payment_credit")
+            )
+        }
         voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
         voiceInputHelper.attachTo(binding.etNote, "Speak note")
         binding.btnPay.setOnClickListener {
@@ -72,6 +89,14 @@ class PaymentCreditFragment : Fragment() {
             .setView(dialogView)
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Confirm") { _, _ ->
+                LocalHistoryStore.append(
+                    requireContext(),
+                    "payment_credit",
+                    "Credit: ₹%.2f • ".format(amount) + (if (note.isBlank()) "No note" else note)
+                )
+                binding.tvRecent.text =
+                    LocalHistoryStore.list(requireContext(), "payment_credit").take(3)
+                        .joinToString("\n")
                 showSuccessDialog(type, amount)
             }
             .show()
