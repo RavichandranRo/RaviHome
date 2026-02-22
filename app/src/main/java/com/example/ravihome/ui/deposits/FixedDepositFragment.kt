@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,10 +20,24 @@ import com.example.ravihome.ui.util.VoiceInputHelper
 import kotlinx.coroutines.launch
 
 class FixedDepositFragment : Fragment() {
+    private data class ExportRequest(val format: ExportFormat, val rows: List<List<String>>)
 
     private lateinit var binding: FragmentDepositFixedBinding
     private val viewModel: FixedDepositViewModel by viewModels()
     private val voiceInputHelper by lazy { VoiceInputHelper(this) }
+    private var pendingExport: ExportRequest? = null
+    private val createExportFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val request = pendingExport ?: return@registerForActivityResult
+            if (uri == null) return@registerForActivityResult
+            ExportUtils.exportToUri(requireContext(), uri, request.format, request.rows)
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "Export complete",
+                "Saved to selected path"
+            )
+            pendingExport = null
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -147,31 +162,8 @@ class FixedDepositFragment : Fragment() {
                     })
                 }
 
-                when (format) {
-                    ExportFormat.CSV -> ExportUtils.exportCsv(
-                        requireContext(),
-                        "fixed_deposits",
-                        rows
-                    )
-
-                    ExportFormat.EXCEL -> ExportUtils.exportExcel(
-                        requireContext(),
-                        "fixed_deposits",
-                        rows
-                    )
-
-                    ExportFormat.PDF -> ExportUtils.exportPdf(
-                        requireContext(),
-                        "fixed_deposits",
-                        rows
-                    )
-
-                    ExportFormat.HTML -> ExportUtils.exportHtml(
-                        requireContext(),
-                        "fixed_deposits",
-                        rows
-                    )
-                }
+                pendingExport = ExportRequest(format, rows)
+                createExportFile.launch("fixed_deposits.${ExportUtils.extensionFor(format)}")
             }
         }
 

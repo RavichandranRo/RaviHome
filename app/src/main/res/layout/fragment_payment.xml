@@ -12,6 +12,14 @@
         android:layout_height="wrap_content"
         android:text="Payments" />
 
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvBalance"
+        style="@style/TextAppearance.Material3.TitleMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Current Balance: ₹0.00" />
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"

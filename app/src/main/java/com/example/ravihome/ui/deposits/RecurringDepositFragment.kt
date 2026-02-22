@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,10 +20,24 @@ import com.example.ravihome.ui.util.VoiceInputHelper
 import kotlinx.coroutines.launch
 
 class RecurringDepositFragment : Fragment() {
+    private data class ExportRequest(val format: ExportFormat, val rows: List<List<String>>)
 
     private lateinit var binding: FragmentDepositRecurringBinding
     private val viewModel: RecurringDepositViewModel by viewModels()
     private val voiceInputHelper by lazy { VoiceInputHelper(this) }
+    private var pendingExport: ExportRequest? = null
+    private val createExportFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val request = pendingExport ?: return@registerForActivityResult
+            if (uri == null) return@registerForActivityResult
+            ExportUtils.exportToUri(requireContext(), uri, request.format, request.rows)
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "Export complete",
+                "Saved to selected path"
+            )
+            pendingExport = null
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -155,31 +170,9 @@ class RecurringDepositFragment : Fragment() {
                     })
                 }
 
-                when (format) {
-                    ExportFormat.CSV -> ExportUtils.exportCsv(
-                        requireContext(),
-                        "recurring_deposits",
-                        rows
-                    )
+                pendingExport = ExportRequest(format, rows)
+                createExportFile.launch("recurring_deposits.${ExportUtils.extensionFor(format)}")
 
-                    ExportFormat.EXCEL -> ExportUtils.exportExcel(
-                        requireContext(),
-                        "recurring_deposits",
-                        rows
-                    )
-
-                    ExportFormat.PDF -> ExportUtils.exportPdf(
-                        requireContext(),
-                        "recurring_deposits",
-                        rows
-                    )
-
-                    ExportFormat.HTML -> ExportUtils.exportHtml(
-                        requireContext(),
-                        "recurring_deposits",
-                        rows
-                    )
-                }
             }
         }
 

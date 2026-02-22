@@ -18,13 +18,19 @@ class VoiceInputHelper(private val fragment: Fragment) {
     private var onResult: ((String) -> Unit)? = null
     private val voiceLauncher =
         fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+            if (result.resultCode != Activity.RESULT_OK) {
+                onResult?.invoke("")
+                onResult = null
+                return@registerForActivityResult
+            }
             val spokenText = result.data
                 ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
                 ?.firstOrNull()
             if (!spokenText.isNullOrBlank()) {
                 activeField?.setText(spokenText)
                 onResult?.invoke(spokenText)
+            } else {
+                onResult?.invoke("")
             }
             onResult = null
         }

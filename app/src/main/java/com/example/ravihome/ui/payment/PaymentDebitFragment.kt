@@ -8,9 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentDebitBinding
 import com.example.ravihome.ui.util.BillStorageUtils
+import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.PopupUtils
 import com.example.ravihome.ui.util.ViewAllDialogUtils
-import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -37,20 +37,22 @@ class PaymentDebitFragment : Fragment() {
         return binding.root
     }
 
+    private fun refreshRecent() {
+        val items = LocalHistoryStore.list(requireContext(), "payment_debit")
+        binding.tvRecent.text =
+            if (items.isEmpty()) "No recent payments" else items.take(3).joinToString("\n")
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        fun refreshRecent() {
-            val items = LocalHistoryStore.list(requireContext(), "payment_debit")
-            binding.tvRecent.text =
-                if (items.isEmpty()) "No recent payments" else items.take(3).joinToString("\n")
-        }
         refreshRecent()
 
         binding.btnViewAll.setOnClickListener {
             ViewAllDialogUtils.show(
                 requireContext(),
                 "All Debit payments",
+                "payment_debit",
                 LocalHistoryStore.list(requireContext(), "payment_debit")
-            )
+            ) { refreshRecent() }
         }
         voiceInputHelper.attachTo(binding.etAmount, "Speak amount")
         voiceInputHelper.attachTo(binding.etNote, "Speak note")
@@ -86,9 +88,8 @@ class PaymentDebitFragment : Fragment() {
                     "payment_debit",
                     "Debit: ₹%.2f • ".format(amount) + (if (note.isBlank()) "No note" else note)
                 )
-                binding.tvRecent.text =
-                    LocalHistoryStore.list(requireContext(), "payment_debit").take(3)
-                        .joinToString("\n")
+                PaymentBalanceStore.applyDebit(requireContext(), amount)
+                refreshRecent()
                 showSuccessDialog(type, amount)
             }.show()
     }

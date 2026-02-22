@@ -25,4 +25,22 @@ object LocalHistoryStore {
             for (i in 0 until arr.length()) add(arr.getString(i))
         }
     }
+
+    fun removeAt(context: Context, key: String, index: Int) {
+        val current = list(context, key)
+        if (index !in current.indices) return
+        val next = JSONArray()
+        current.filterIndexed { i, _ -> i != index }.forEach { next.put(it) }
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+            .edit()
+            .putString(key, next.toString())
+            .apply()
+    }
+
+    fun clear(context: Context, key: String) {
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+            .edit()
+            .putString(key, "[]")
+            .apply()
+    }
 }

@@ -1,14 +1,26 @@
 package com.example.ravihome.ui.travel
 
+import android.animation.ObjectAnimator
 import android.app.DatePickerDialog
+import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.appcompat.widget.AppCompatImageButton
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import com.example.ravihome.R
 import com.example.ravihome.databinding.FragmentTravelBinding
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.LocalHistoryStore
@@ -26,6 +38,7 @@ class TravelFragment : Fragment() {
 
     private lateinit var binding: FragmentTravelBinding
     private val viewModel: TravelViewModel by viewModels()
+    private val previousStatusByPnr = mutableMapOf<String, String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,8 +68,12 @@ class TravelFragment : Fragment() {
             ViewAllDialogUtils.show(
                 requireContext(),
                 "All saved tickets",
+                "travel_tickets",
                 LocalHistoryStore.list(requireContext(), "travel_tickets")
             )
+        }
+        binding.cardStatus.setOnClickListener {
+            viewModel.uiState.value.status?.let { showTicketDetails(it) }
         }
 
         binding.btnPrintTicket.setOnClickListener {
@@ -69,13 +86,12 @@ class TravelFragment : Fragment() {
                 )
             } else {
                 val rows = listOf(
-                    listOf("PNR", "Train/Bus", "From", "To", "Date", "Status", "Coach", "Seat"),
+                    listOf("PNR", "Train", "From", "To", "Status", "Coach", "Seat"),
                     listOf(
                         status.pnr,
                         status.trainName,
                         status.from,
                         status.to,
-                        status.date,
                         status.status,
                         status.coach,
                         status.seat
@@ -128,16 +144,9 @@ class TravelFragment : Fragment() {
         }
 
         binding.btnRefunded.setOnClickListener {
-            val dialogView = layoutInflater.inflate(
-                com.example.ravihome.R.layout.dialog_refund,
-                null
-            )
-            val refundMode = dialogView.findViewById<android.widget.EditText>(
-                com.example.ravihome.R.id.etRefundMode
-            )
-            val refundAmount = dialogView.findViewById<android.widget.EditText>(
-                com.example.ravihome.R.id.etRefundAmount
-            )
+            val dialogView = layoutInflater.inflate(R.layout.dialog_refund, null)
+            val refundMode = dialogView.findViewById<android.widget.EditText>(R.id.etRefundMode)
+            val refundAmount = dialogView.findViewById<android.widget.EditText>(R.id.etRefundAmount)
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Refund details")
                 .setView(dialogView)
@@ -169,13 +178,16 @@ class TravelFragment : Fragment() {
                     binding.tvTrain.text = "${status.trainName} (${status.pnr})"
                     binding.tvRoute.text = "${status.from} ➜ ${status.to}"
                     binding.tvDate.text = "Journey: ${status.date}"
-                    binding.tvStatus.text = "Status: ${status.status}"
-                    binding.tvCoach.text = "Coach: ${status.coach}  Seat: ${status.seat}"
+                    binding.tvStatus.text = "${status.status} • ${status.berthType}"
+                    binding.tvCoach.text =
+                        "${status.coach} • Seat ${status.seat} • Fare ₹${status.fare}"
                     binding.tvChart.text = if (status.chartPrepared) {
                         "Chart prepared"
                     } else {
                         "Chart not prepared"
                     }
+                    applyStatusColor(status.status)
+                    handleWaitlistToConfirmed(status)
                 }
 
                 binding.tvStats.text = if (state.stats.totalChecks == 0) {
@@ -192,6 +204,126 @@ class TravelFragment : Fragment() {
                     )
                 }
             }
+        }
+    }
+
+    private fun applyStatusColor(status: String) {
+        val color = when {
+            status.contains("CONFIRMED", true) -> R.color.status_green
+            status.contains("RAC", true) -> R.color.status_orange
+            status.contains("WAIT", true) || status.contains("WL", true) -> R.color.status_red
+            else -> android.R.color.darker_gray
+        }
+        binding.tvStatus.setTextColor(ContextCompat.getColor(requireContext(), color))
+    }
+
+    private fun handleWaitlistToConfirmed(status: TravelStatus) {
+        val current = status.status.uppercase()
+        val previous = previousStatusByPnr[status.pnr]
+        if (previous != null && (previous.contains("WAIT") || previous.contains("RAC")) && current.contains(
+                "CONFIRMED"
+            )
+        ) {
+            animateConfirmation()
+            vibrateAndBeep()
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "Great news",
+                "PNR ${status.pnr} moved to CONFIRMED"
+            )
+        }
+        previousStatusByPnr[status.pnr] = current
+    }
+
+    private fun animateConfirmation() {
+        ObjectAnimator.ofFloat(binding.cardStatus, View.SCALE_X, 1f, 1.04f, 1f).apply {
+            duration = 450L
+            start()
+        }
+        ObjectAnimator.ofFloat(binding.cardStatus, View.SCALE_Y, 1f, 1.04f, 1f).apply {
+            duration = 450L
+            start()
+        }
+    }
+
+    private fun vibrateAndBeep() {
+        val context = requireContext()
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(250)
+        }
+        ToneGenerator(AudioManager.STREAM_NOTIFICATION, 90).startTone(
+            ToneGenerator.TONE_PROP_ACK,
+            220
+        )
+    }
+
+    private fun showTicketDetails(status: TravelStatus) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_ticket_details, null)
+        val body = dialogView.findViewById<TextView>(R.id.tvTicketBody)
+        val print = dialogView.findViewById<AppCompatImageButton>(R.id.btnPrint)
+        body.text = """
+PNR: ${status.pnr}
+Train: ${status.trainName}
+From: ${status.from}    To: ${status.to}
+Timing: ${status.departureTime} → ${status.arrivalTime}
+Coach: ${status.coach}    Seat: ${status.seat}
+Fare: ${status.fare}
+Class: ${status.berthType}
+Ticket Status: ${status.status}
+Chart: ${if (status.chartPrepared) "Prepared" else "Not Prepared"}
+        """.trimIndent()
+
+        val rows = listOf(
+            listOf(
+                "PNR",
+                "Train",
+                "From",
+                "To",
+                "Timing",
+                "Coach",
+                "Seat",
+                "Fare",
+                "Class",
+                "Status"
+            ),
+            listOf(
+                status.pnr,
+                status.trainName,
+                status.from,
+                status.to,
+                "${status.departureTime}-${status.arrivalTime}",
+                status.coach,
+                status.seat,
+                status.fare,
+                status.berthType,
+                status.status
+            )
+        )
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Ticket")
+            .setView(dialogView)
+            .setPositiveButton("Close", null)
+            .show()
+
+        print.setOnClickListener {
+            ExportUtils.exportPdf(requireContext(), "travel_ticket_${status.pnr}", rows)
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "Printed",
+                "Ticket PDF generated in app storage."
+            )
         }
     }
 }

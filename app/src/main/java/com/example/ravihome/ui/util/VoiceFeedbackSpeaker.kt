@@ -15,8 +15,8 @@ object VoiceFeedbackSpeaker {
                 ready = status == TextToSpeech.SUCCESS
                 if (ready) {
                     tts?.language = Locale.US
-                    tts?.setPitch(1.28f)
-                    tts?.setSpeechRate(0.92f)
+                    tts?.setPitch(1.42f)
+                    tts?.setSpeechRate(0.9f)
                     tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "app_voice_feedback")
                 }
             }
