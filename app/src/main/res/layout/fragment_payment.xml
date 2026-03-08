@@ -20,6 +20,51 @@
         android:layout_marginTop="8dp"
         android:text="Current Balance: ₹0.00" />
 
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvCashInHand"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cash in hand: ₹0" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvCashBreakdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="No denominations saved"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnManageDenominations"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Manage denominations (₹1 to ₹2000)" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddReceived"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add received amount" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"

@@ -12,6 +12,45 @@ object ViewAllDialogUtils {
         rows: List<String>,
         onChanged: () -> Unit = {}
     ) {
+        showList(
+            context = context,
+            title = title,
+            rows = rows,
+            onRowDelete = { index ->
+                LocalHistoryStore.removeAt(context, key, index)
+                onChanged()
+            },
+            onClearAll = {
+                LocalHistoryStore.clear(context, key)
+                onChanged()
+            }
+        )
+    }
+
+    fun show(
+        context: Context,
+        title: String,
+        rows: List<String>,
+        onRowClick: ((index: Int) -> Unit)? = null,
+        onRowDelete: ((index: Int) -> Unit)? = null
+    ) {
+        showList(
+            context = context,
+            title = title,
+            rows = rows,
+            onRowClick = onRowClick,
+            onRowDelete = onRowDelete
+        )
+    }
+
+    private fun showList(
+        context: Context,
+        title: String,
+        rows: List<String>,
+        onRowClick: ((index: Int) -> Unit)? = null,
+        onRowDelete: ((index: Int) -> Unit)? = null,
+        onClearAll: (() -> Unit)? = null
+    ) {
         if (rows.isEmpty()) {
             MaterialAlertDialogBuilder(context)
                 .setTitle(title)
@@ -20,41 +59,28 @@ object ViewAllDialogUtils {
                 .show()
             return
         }
+
         val tableRows = rows.mapIndexed { index, row ->
             "%2d | %s".format(index + 1, row.replace(" • ", " | "))
         }.toTypedArray()
 
         MaterialAlertDialogBuilder(context)
-            .setTitle("$title (tap row to delete)")
-            .setItems(tableRows) { _, which ->
-                LocalHistoryStore.removeAt(context, key, which)
-                Toast.makeText(context, "Deleted row ${which + 1}", Toast.LENGTH_SHORT).show()
-                onChanged()
-            }
-            .setNeutralButton("Clear All") { _, _ ->
-                LocalHistoryStore.clear(context, key)
-                onChanged()
-            }
-            .setPositiveButton("Close", null)
-            .show()
-    }
-
-    fun show(context: Context, title: String, rows: List<String>) {
-        val message = if (rows.isEmpty()) {
-            "No saved items yet."
-        } else {
-            buildString {
-                append("# | Details\n")
-                append("--------------------------------\n")
-                rows.forEachIndexed { index, row ->
-                    append("${index + 1} | ${row.replace(" • ", " | ")}\n")
-                }
-            }
-        }
-
-        MaterialAlertDialogBuilder(context)
             .setTitle(title)
-            .setMessage(message)
+            .setItems(tableRows) { _, which ->
+                onRowClick?.invoke(which)
+            }
+            .setNeutralButton("Delete Row") { _, _ ->
+                if (onRowDelete == null) return@setNeutralButton
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("Delete which row?")
+                    .setItems(tableRows) { _, which ->
+                        onRowDelete.invoke(which)
+                        Toast.makeText(context, "Deleted row ${which + 1}", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                    .show()
+            }
+            .setNegativeButton("Clear All") { _, _ -> onClearAll?.invoke() }
             .setPositiveButton("Close", null)
             .show()
     }

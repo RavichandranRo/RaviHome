@@ -78,6 +78,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="View All saved items" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExport"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Export payments" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -22,6 +23,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.ravihome.R
 import com.example.ravihome.databinding.FragmentTravelBinding
+import com.example.ravihome.ui.export.ExportDialog
+import com.example.ravihome.ui.export.ExportFormat
 import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.PopupUtils
@@ -36,9 +39,41 @@ import java.util.Calendar
 @AndroidEntryPoint
 class TravelFragment : Fragment() {
 
+    private data class ExportRequest(val format: ExportFormat, val rows: List<List<String>>)
+
+    private data class ManualTravelRow(
+        val slNo: String,
+        val date: String,
+        val from: String,
+        val to: String,
+        val coach: String,
+        val seatNo: String,
+        val birth: String,
+        val trainName: String,
+        val status: String,
+        val payment: String,
+        val time: String,
+        val notes: String = "",
+        val pnr: String = ""
+    )
+
     private lateinit var binding: FragmentTravelBinding
     private val viewModel: TravelViewModel by viewModels()
     private val previousStatusByPnr = mutableMapOf<String, String>()
+    private val manualRows = mutableListOf<ManualTravelRow>()
+    private var pendingExport: ExportRequest? = null
+    private val createExportFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val request = pendingExport ?: return@registerForActivityResult
+            if (uri == null) return@registerForActivityResult
+            ExportUtils.exportToUri(requireContext(), uri, request.format, request.rows)
+            PopupUtils.showAutoDismiss(
+                requireContext(),
+                "Export complete",
+                "Saved to selected path"
+            )
+            pendingExport = null
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,21 +92,63 @@ class TravelFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var reminderDate: LocalDate? = null
+
         fun refreshRecent() {
             val items = LocalHistoryStore.list(requireContext(), "travel_tickets")
+            val manualPreview = manualRows.takeLast(2).map {
+                "${it.slNo} ${it.date} ${it.from}-${it.to} ${it.trainName} ${it.status}"
+            }
+            val merged = (items.takeLast(2) + manualPreview).takeLast(3)
             binding.tvRecent.text =
-                if (items.isEmpty()) "No recent tickets" else items.take(3).joinToString("\n")
+                if (merged.isEmpty()) "No recent tickets" else merged.joinToString("\n")
         }
 
         refreshRecent()
-        binding.btnViewAll.setOnClickListener {
-            ViewAllDialogUtils.show(
-                requireContext(),
-                "All saved tickets",
-                "travel_tickets",
-                LocalHistoryStore.list(requireContext(), "travel_tickets")
-            )
+
+        binding.btnAddTicketRow.setOnClickListener {
+            val raw = binding.etTicketRow.text?.toString()?.trim().orEmpty()
+            val parsed = parseManualRow(raw)
+            if (parsed == null) {
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Invalid row format",
+                    "Use tab/|/comma format with at least 11 fields: SLNO,DATE,FROM,TO,COACH,SEATNO,BIRTH,TRAIN,STATUS,PAYMENT,TIME"
+                )
+            } else {
+                manualRows.add(parsed)
+                binding.etTicketRow.text?.clear()
+                refreshRecent()
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Row added",
+                    "Travel row saved for export."
+                )
+            }
         }
+
+        binding.btnExportTravelRegister.setOnClickListener {
+            if (manualRows.isEmpty() && viewModel.uiState.value.status == null) {
+                PopupUtils.showAutoDismiss(
+                    requireContext(),
+                    "Nothing to export",
+                    "Add manual rows or fetch a PNR first."
+                )
+                return@setOnClickListener
+            }
+
+            ExportDialog.show(requireContext()) { _, format ->
+                val rows = buildTravelExportRows()
+                pendingExport = ExportRequest(format, rows)
+                createExportFile.launch("travel_ticket_details.${ExportUtils.extensionFor(format)}")
+            }
+        }
+
+        binding.btnViewAll.setOnClickListener {
+            val list = LocalHistoryStore.list(requireContext(), "travel_tickets") +
+                    manualRows.map { "${it.slNo} • ${it.date} • ${it.from}→${it.to} • ${it.trainName} • ${it.status}" }
+            ViewAllDialogUtils.show(requireContext(), "All saved tickets", "travel_tickets", list)
+        }
+
         binding.cardStatus.setOnClickListener {
             viewModel.uiState.value.status?.let { showTicketDetails(it) }
         }
@@ -105,10 +182,12 @@ class TravelFragment : Fragment() {
                 )
             }
         }
+
         binding.btnFetch.setOnClickListener {
             val pnr = binding.etPnr.text?.toString()?.trim().orEmpty()
             viewModel.fetchPnrStatus(pnr)
         }
+
         binding.toggleTrips.check(binding.btnUpcoming.id)
         binding.toggleTrips.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -181,11 +260,8 @@ class TravelFragment : Fragment() {
                     binding.tvStatus.text = "${status.status} • ${status.berthType}"
                     binding.tvCoach.text =
                         "${status.coach} • Seat ${status.seat} • Fare ₹${status.fare}"
-                    binding.tvChart.text = if (status.chartPrepared) {
-                        "Chart prepared"
-                    } else {
-                        "Chart not prepared"
-                    }
+                    binding.tvChart.text =
+                        if (status.chartPrepared) "Chart prepared" else "Chart not prepared"
                     applyStatusColor(status.status)
                     handleWaitlistToConfirmed(status)
                 }
@@ -197,14 +273,96 @@ class TravelFragment : Fragment() {
                 }
 
                 state.message?.let { message ->
-                    PopupUtils.showAutoDismiss(
-                        requireContext(),
-                        "Ticket update",
-                        message
-                    )
+                    PopupUtils.showAutoDismiss(requireContext(), "Ticket update", message)
                 }
             }
         }
+    }
+
+    private fun parseManualRow(raw: String): ManualTravelRow? {
+        if (raw.isBlank()) return null
+        val parts = when {
+            raw.contains('\t') -> raw.split('\t')
+            raw.contains('|') -> raw.split('|')
+            raw.contains(',') -> raw.split(',')
+            else -> raw.split(Regex("\\s{2,}"))
+        }.map { it.trim() }
+
+        if (parts.size < 11) return null
+
+        return ManualTravelRow(
+            slNo = parts.getOrElse(0) { "" },
+            date = parts.getOrElse(1) { "" },
+            from = parts.getOrElse(2) { "" },
+            to = parts.getOrElse(3) { "" },
+            coach = parts.getOrElse(4) { "" },
+            seatNo = parts.getOrElse(5) { "" },
+            birth = parts.getOrElse(6) { "" },
+            trainName = parts.getOrElse(7) { "" },
+            status = parts.getOrElse(8) { "" },
+            payment = parts.getOrElse(9) { "" },
+            time = parts.getOrElse(10) { "" },
+            notes = parts.getOrElse(11) { "" },
+            pnr = parts.getOrElse(12) { "" }
+        )
+    }
+
+    private fun buildTravelExportRows(): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
+        rows += listOf("TRAIN TICKET DETAILS", "", "", "", "", "", "", "", "", "", "", "PNR NUMBER")
+        rows += listOf(
+            "SLNO",
+            "DT OF JOURNY",
+            "FROM",
+            "TO",
+            "COACH",
+            "SEATNO",
+            "BIRTH",
+            "TRAIN NAME",
+            "STATUS",
+            "PAYMENT",
+            "TIME",
+            "NOTES",
+            "PNR"
+        )
+
+        rows += manualRows.map {
+            listOf(
+                it.slNo,
+                it.date,
+                it.from,
+                it.to,
+                it.coach,
+                it.seatNo,
+                it.birth,
+                it.trainName,
+                it.status,
+                it.payment,
+                it.time,
+                it.notes,
+                it.pnr
+            )
+        }
+
+        viewModel.uiState.value.status?.let { s ->
+            rows += listOf(
+                "PNR",
+                s.date,
+                s.from,
+                s.to,
+                s.coach,
+                s.seat,
+                s.berthType,
+                s.trainName,
+                s.status,
+                "-",
+                s.departureTime,
+                if (s.chartPrepared) "CHART PREPARED" else "",
+                s.pnr
+            )
+        }
+
+        return rows
     }
 
     private fun applyStatusColor(status: String) {

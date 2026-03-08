@@ -115,6 +115,19 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
+                    android:hint="Amount (optional)">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
                     android:hint="Date">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -215,6 +228,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="View All saved items" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewCompleted"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View completed tasks" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

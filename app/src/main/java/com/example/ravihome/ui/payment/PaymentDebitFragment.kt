@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.ravihome.databinding.FragmentPaymentDebitBinding
+import com.example.ravihome.ui.export.ExportDialog
+import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.BillStorageUtils
 import com.example.ravihome.ui.util.LocalHistoryStore
 import com.example.ravihome.ui.util.PopupUtils
@@ -15,7 +17,23 @@ import com.example.ravihome.ui.util.VoiceInputHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class PaymentDebitFragment : Fragment() {
+    private data class ExportRequest(
+        val format: com.example.ravihome.ui.export.ExportFormat,
+        val rows: List<List<String>>
+    )
 
+    private var pendingExport: ExportRequest? = null
+    private val createExportFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val request = pendingExport ?: return@registerForActivityResult
+            if (uri != null) ExportUtils.exportToUri(
+                requireContext(),
+                uri,
+                request.format,
+                request.rows
+            )
+            pendingExport = null
+        }
     private lateinit var binding: FragmentPaymentDebitBinding
     private val voiceInputHelper by lazy { VoiceInputHelper(this) }
     private val pickBill =
@@ -68,6 +86,18 @@ class PaymentDebitFragment : Fragment() {
         }
         binding.btnUploadBill.setOnClickListener {
             pickBill.launch(arrayOf("application/pdf", "image/*"))
+        }
+        binding.btnExport.setOnClickListener {
+            ExportDialog.show(requireContext()) { _, format ->
+                val rows = buildList {
+                    add(listOf("Type", "Entry"))
+                    addAll(
+                        LocalHistoryStore.list(requireContext(), "payment_debit")
+                            .map { listOf("payment_debit", it) })
+                }
+                pendingExport = ExportRequest(format, rows)
+                createExportFile.launch("payment_debit.${ExportUtils.extensionFor(format)}")
+            }
         }
     }
 

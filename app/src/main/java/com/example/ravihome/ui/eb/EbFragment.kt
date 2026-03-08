@@ -5,11 +5,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.ravihome.databinding.FragmentEbBinding
+import com.example.ravihome.ui.export.ExportDialog
+import com.example.ravihome.ui.export.ExportFormat
+import com.example.ravihome.ui.export.ExportUtils
 import com.example.ravihome.ui.util.PopupUtils
 import com.example.ravihome.ui.util.ViewAllDialogUtils
 import com.google.android.material.transition.MaterialFadeThrough
@@ -20,7 +24,20 @@ import java.util.Calendar
 
 @AndroidEntryPoint
 class EbFragment : Fragment() {
+    private data class ExportRequest(val format: ExportFormat, val rows: List<List<String>>)
 
+    private var pendingExport: ExportRequest? = null
+    private val createExportFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val request = pendingExport ?: return@registerForActivityResult
+            if (uri != null) ExportUtils.exportToUri(
+                requireContext(),
+                uri,
+                request.format,
+                request.rows
+            )
+            pendingExport = null
+        }
     private lateinit var binding: FragmentEbBinding
     private val viewModel: EbViewModel by viewModels()
 
@@ -42,6 +59,7 @@ class EbFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var latestAmount: Float? = null
         var reminderDate: LocalDate? = null
+        var previousDayUnits: Float = 0f
 
         fun recalc() {
             val prev = binding.etPrevious.text.toString().toFloatOrNull()
@@ -64,10 +82,12 @@ class EbFragment : Fragment() {
                 return
             }
 
-            val amount = viewModel.calculate(units)
+            val runningUnits = previousDayUnits + units
+            val amount = viewModel.calculate(runningUnits)
             latestAmount = amount
             binding.btnRecordPayment.isEnabled = amount > 0f
-            binding.tvUnits.text = "Units: %.1f".format(units)
+            binding.tvUnits.text =
+                "Units today: %.1f • Total units: %.1f".format(units, runningUnits)
             binding.tvAmount.text = "Amount: ₹%.2f".format(amount)
         }
 
@@ -77,6 +97,11 @@ class EbFragment : Fragment() {
 
         binding.btnRecordPayment.setOnClickListener {
             val amount = latestAmount ?: return@setOnClickListener
+            val prev = binding.etPrevious.text.toString().toFloatOrNull()
+            val curr = binding.etCurrent.text.toString().toFloatOrNull()
+            if (prev != null && curr != null && curr >= prev) {
+                previousDayUnits += (curr - prev)
+            }
             viewModel.recordPayment(amount)
             PopupUtils.showAutoDismiss(
                 requireContext(),
@@ -106,11 +131,28 @@ class EbFragment : Fragment() {
         }
 
         binding.btnViewAll.setOnClickListener {
+            val list = viewModel.ebHistory.value
             ViewAllDialogUtils.show(
                 requireContext(),
                 "All saved EB items",
-                viewModel.ebHistory.value.map { "${it.title} • ₹%.2f".format(it.amount ?: 0.0) }
+                list.map { "${it.title} • ₹%.2f".format(it.amount ?: 0.0) },
+                onRowDelete = { index -> list.getOrNull(index)?.let { viewModel.delete(it.id) } }
             )
+        }
+        binding.btnExport.setOnClickListener {
+            ExportDialog.show(requireContext()) { _, format ->
+                val rows = buildList {
+                    add(listOf("Title", "Amount"))
+                    addAll(viewModel.ebHistory.value.map {
+                        listOf(
+                            it.title,
+                            "%.2f".format(it.amount ?: 0.0)
+                        )
+                    })
+                }
+                pendingExport = ExportRequest(format, rows)
+                createExportFile.launch("eb_history.${ExportUtils.extensionFor(format)}")
+            }
         }
         binding.btnSetReminder.setOnClickListener {
             val cal = Calendar.getInstance()

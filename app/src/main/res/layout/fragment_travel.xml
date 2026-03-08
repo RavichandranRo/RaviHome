@@ -76,6 +76,42 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Print ticket PDF" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="Manual ticket row (tab/| separated): SLNO,DATE,FROM,TO,COACH,SEAT,BIRTH,TRAIN,STATUS,PAYMENT,TIME,NOTES,PNR(optional)">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etTicketRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="3" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddTicketRow"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Add manual ticket row" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExportTravelRegister"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Export travel register" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExport"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Export travel history" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

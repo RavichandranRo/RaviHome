@@ -34,4 +34,8 @@ class EbViewModel @Inject constructor(
             repository.addEbPayment(amount.toDouble())
         }
     }
+
+    fun delete(id: Long) {
+        viewModelScope.launch { repository.delete(id) }
+    }
 }

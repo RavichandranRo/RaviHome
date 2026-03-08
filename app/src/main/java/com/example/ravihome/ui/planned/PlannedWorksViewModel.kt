@@ -25,6 +25,8 @@ class PlannedWorksViewModel @Inject constructor(
 
     val recentPlannedWorks = repository.getRecentPlannedWorks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val completedWorks = repository.completedWorks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private val searchKeyword = MutableStateFlow("")
     private val searchDate = MutableStateFlow<LocalDate?>(null)
 
@@ -35,14 +37,14 @@ class PlannedWorksViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun setKeyword(keyword: String?) {
-        searchKeyword.value = keyword ?.trim().orEmpty()
+        searchKeyword.value = keyword?.trim().orEmpty()
     }
 
     fun setDate(date: LocalDate?) {
         searchDate.value = date
     }
 
-    fun addPlannedWork(title: String, date: LocalDate, desc: String) {
+    fun addPlannedWork(title: String, date: LocalDate, desc: String, amount: Double?) {
         viewModelScope.launch {
             repository.insert(
                 WorkEntity(
@@ -50,6 +52,7 @@ class PlannedWorksViewModel @Inject constructor(
                     description = desc,
                     date = date,
                     status = WorkStatus.PLANNED,
+                    amount = amount,
                     createdAt = System.currentTimeMillis()
                 )
             )

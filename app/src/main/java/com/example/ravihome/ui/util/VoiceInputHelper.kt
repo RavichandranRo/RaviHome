@@ -1,13 +1,16 @@
 package com.example.ravihome.ui.util
 
+import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
 import android.view.ViewParent
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
@@ -16,6 +19,23 @@ class VoiceInputHelper(private val fragment: Fragment) {
 
     private var activeField: EditText? = null
     private var onResult: ((String) -> Unit)? = null
+    private var pendingPrompt: String? = null
+
+    private val permissionLauncher =
+        fragment.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                pendingPrompt?.let { launchRecognizerInternal(it) }
+            } else {
+                onResult?.invoke("")
+                Toast.makeText(
+                    fragment.requireContext(),
+                    "Microphone permission is required for voice input.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            pendingPrompt = null
+        }
+
     private val voiceLauncher =
         fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode != Activity.RESULT_OK) {
@@ -62,6 +82,18 @@ class VoiceInputHelper(private val fragment: Fragment) {
     }
 
     private fun launchRecognizer(prompt: String) {
+        val context = fragment.requireContext()
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingPrompt = prompt
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            return
+        }
+        launchRecognizerInternal(prompt)
+    }
+
+    private fun launchRecognizerInternal(prompt: String) {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,

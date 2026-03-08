@@ -9,10 +9,6 @@
         android:icon="@android:drawable/ic_menu_agenda"
         android:title="Planned" />
     <item
-        android:id="@+id/completedWorksFragment"
-        android:icon="@android:drawable/ic_menu_today"
-        android:title="Completed" />
-    <item
         android:id="@+id/ebFragment"
         android:icon="@android:drawable/ic_menu_edit"
         android:title="EB" />

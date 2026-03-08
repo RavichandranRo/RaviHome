@@ -15,4 +15,8 @@ class FixedDepositViewModel : ViewModel() {
     fun update(entry: DepositEntry) {
         _entries.value = _entries.value.map { if (it.id == entry.id) entry else it }
     }
+
+    fun delete(entryId: Long) {
+        _entries.value = _entries.value.filterNot { it.id == entryId }
+    }
 }

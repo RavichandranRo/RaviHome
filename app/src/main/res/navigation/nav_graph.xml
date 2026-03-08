@@ -11,10 +11,6 @@
         android:name="com.example.ravihome.ui.planned.PlannedWorksFragment" />
 
     <fragment
-        android:id="@+id/completedWorksFragment"
-        android:name="com.example.ravihome.ui.completed.CompletedWorksFragment" />
-
-    <fragment
         android:id="@+id/ebFragment"
         android:name="com.example.ravihome.ui.eb.EbFragment" />
 

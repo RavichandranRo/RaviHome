@@ -75,13 +75,13 @@ class PlannedWorksFragment : Fragment() {
             onCompleteRequested = { work, onReset ->
                 AlertDialog.Builder(requireContext())
                     .setTitle("Mark as completed?")
-                    .setMessage("This will move the work to Completed Works.")
+                    .setMessage("This will mark the work to Completed Works.")
                     .setPositiveButton("Confirm") { _, _ ->
                         viewModel.markCompleted(work)
                         PopupUtils.showAutoDismiss(
                             requireContext(),
                             "Marked completed",
-                            "Moved to Completed Works."
+                            "Task marked as Completed."
                         )
                     }
                     .setNegativeButton("Cancel") { _, _ ->
@@ -126,7 +126,7 @@ class PlannedWorksFragment : Fragment() {
             val desc = binding.etDescription.text.toString().trim()
             val dateText = binding.etDate.text.toString().trim()
             val date = DateFormatUtils.parseInput(dateText)
-
+            val amount = binding.etAmount.text.toString().trim().toDoubleOrNull()
             when {
                 title.isBlank() ->
                     PopupUtils.showAutoDismiss(
@@ -143,7 +143,7 @@ class PlannedWorksFragment : Fragment() {
                     )
 
                 else -> {
-                    viewModel.addPlannedWork(title, date, desc)
+                    viewModel.addPlannedWork(title, date, desc, amount)
 
                     PopupUtils.showAutoDismiss(
                         requireContext(),
@@ -153,6 +153,7 @@ class PlannedWorksFragment : Fragment() {
                     binding.etTitle.text?.clear()
                     binding.etDescription.text?.clear()
                     binding.etDate.text?.clear()
+                    binding.etAmount.text?.clear()
                 }
             }
         }
@@ -161,6 +162,19 @@ class PlannedWorksFragment : Fragment() {
                 requireContext(),
                 "All planned works",
                 adapter.currentList.map { "${it.title} • ${DateFormatUtils.formatDisplay(it.date)}\n${it.description}" }
+            )
+        }
+        binding.btnViewCompleted.setOnClickListener {
+            ViewAllDialogUtils.show(
+                requireContext(),
+                "Completed tasks",
+                viewModel.completedWorks.value.map {
+                    "${it.title} • ${
+                        DateFormatUtils.formatDisplay(
+                            it.date
+                        )
+                    }\n${it.description}"
+                }
             )
         }
         // Export (filtered list respected ✔️)

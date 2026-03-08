@@ -43,12 +43,6 @@ class WelcomeFragment : Fragment() {
                 "Planned Works"
             )
         }
-        binding.cardCompleted.setOnClickListener {
-            navigate(
-                R.id.completedWorksFragment,
-                "Completed Works"
-            )
-        }
         binding.cardEb.setOnClickListener { navigate(R.id.ebFragment, "EB") }
         binding.cardTravel.setOnClickListener { navigate(R.id.travelFragment, "Travel") }
         binding.cardPayment.setOnClickListener { navigate(R.id.paymentFragment, "Payments") }
@@ -83,7 +77,7 @@ class WelcomeFragment : Fragment() {
         val text = spoken.lowercase()
         when {
             "planned" in text -> navigate(R.id.plannedWorksFragment, "Planned Works")
-            "completed" in text -> navigate(R.id.completedWorksFragment, "Completed Works")
+            "completed" in text -> navigate(R.id.plannedWorksFragment, "Planned Works")
             "eb" in text || "electric" in text -> navigate(R.id.ebFragment, "EB")
             "travel" in text || "train" in text || "bus" in text -> navigate(
                 R.id.travelFragment,
@@ -113,7 +107,6 @@ class WelcomeFragment : Fragment() {
     private fun animateFloatingCards() {
         listOf(
             binding.cardPlanned,
-            binding.cardCompleted,
             binding.cardEb,
             binding.cardTravel,
             binding.cardPayment,
